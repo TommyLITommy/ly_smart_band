@@ -1,0 +1,597 @@
+#include <stdint.h>
+#include <math.h>
+#include "heart_rate_data_handle.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "blood_pressure.h"
+#include "watch_mode_miscellaneous.h"
+uint32_t  smooth_data_heart_rate=0;
+
+int32_t  dif = 1;
+int32_t  ls_dif= 1;
+
+int32_t   point_buf[10] = { 0 };
+uint32_t  point_buf_len = 0;
+uint32_t  th0 = 100;
+uint32_t  ls_th0 = 100;
+int32_t  dif_max = 0;
+int32_t  dif_min = 0;
+int8_t  flag = 0;
+
+uint8_t  heart0 = 0;
+uint8_t  ls_heart = 0;
+uint8_t  heart = 0;
+uint8_t  average_heart = 0;
+uint32_t  heart_sum = 0;
+uint32_t  len = 0;
+uint8_t j_ctinu_heart = 0 ;
+uint8_t n_ctinu_heart = 0 ;
+uint8_t flag_heart = 0;
+uint8_t change_len = 0;
+
+uint32_t ctinu_dif_count = 0;
+uint32_t dif_index = 0;
+uint32_t number = 0;
+
+uint32_t  SMOOTH_WINDOWS_HEART_RATE[2] = { 0 };
+uint32_t  SMOOTH_WINDOWS_HEART_RATE_next[2] = { 0 };
+uint32_t  SMOOTH_WINDOWS_HEART_RATE_next_two[2] = { 0 };
+uint32_t  SMOOTH_WINDOWS_HEART_RATE_next_three[2] = { 0 };
+uint32_t  SMOOTH_WINDOWS_HEART_RATE_next_four[2] = { 0 };
+uint32_t  DIF_WINDOWS[5] = { 0 };
+
+/*********信号质量评估************/
+uint8_t no_pulse_wave = 0;
+uint8_t ctinu_equal_data = 0;
+uint16_t ls_data = 0;
+uint16_t cur_data = 0;
+uint8_t ctinu_equal_heart = 0;
+uint8_t ctinu_heart = 0;
+uint8_t signal_quality = 0;
+/*********信号质量评估************/
+/****************Blood pressure Start********************/
+uint32_t PPG_Ps,PPG_Pd;//用于存放PPG数据中的PS,PD；
+extern uint8_t SigwaveLength=0;//分离出单波的个数；
+uint32_t PPG_max=0,PPG_min=0;//波形的最值；
+uint32_t PPG_PS_Sum,PPG_PD_Sum;//一屏共6个波形后脉搏波的PS、PD的和；
+uint32_t PPG_PS_average,PPG_PD_average;//PS、PD的均值。
+uint8_t  PS,PD;//收缩压、舒张压；
+
+static uint8_t user_age;
+
+
+static uint8_t user_height;
+static uint8_t user_weight;
+static uint8_t user_gender;
+/****************Blood pressure End********************/
+void whether_saturation_is_saturated(uint16_t source_data)
+{
+	  //NRF_LOG_RAW_INFO("%d\r\n", ls_data);	
+	  ls_data = cur_data;
+    cur_data = source_data;
+    if(cur_data==ls_data)
+        ctinu_equal_data = ctinu_equal_data + 1;
+    else
+        ctinu_equal_data = 0;
+   
+    if (ctinu_equal_data == 5)
+		{
+        no_pulse_wave = 2;
+			  //NRF_LOG_RAW_INFO("%d\r\n", 2);// dele
+			  ctinu_equal_data = 0;
+		}
+  
+}
+
+void smooth_heart_rate_data(uint32_t index, uint32_t *windows, uint32_t source_data)
+{
+	int8_t k = 0;
+	uint32_t sum = 0;
+	windows[0] = windows[1];
+	windows[1] = source_data;
+	for (k = 0; k < 2; k++)
+	{
+		sum = sum + windows[k];
+	}
+	if (index >= 2)
+	{
+		smooth_data_heart_rate = sum / 2;
+	}
+	else
+	{
+		smooth_data_heart_rate = source_data;
+	}	
+}
+
+void diff(uint32_t index, uint32_t *windows, uint32_t source_data)
+{
+	int8_t j = 0;
+//flag = 0;
+	ls_dif = dif;
+	for (j = 0; j < 4; j++)
+	{
+		windows[j] = windows[j + 1];
+	}
+	windows[4] = source_data;
+
+	if (index < 5)
+	{
+		dif = windows[4] - windows[3];
+	}
+	else
+	{
+		dif = 2 * windows[4] + windows[3] - windows[1] - 2 * windows[0];
+	}
+
+		if(dif-ls_dif>=0)
+		{
+			 if (ctinu_dif_count == 0)
+			 {
+            dif_min = ls_dif;
+            dif_index = index-2;
+			 }      
+        ctinu_dif_count = ctinu_dif_count + 1;
+        if (ls_dif<=0&&dif>=0)
+            	{
+								dif_index = index-2;  
+								PPG_Pd=smooth_data_heart_rate;//波谷点位置；
+							}					
+				
+		}   
+    else
+		{
+				if(dif<0 && ls_dif>0)
+					{
+						PPG_Ps=smooth_data_heart_rate;	//找波峰点的位置；
+					}            
+		
+        if (ctinu_dif_count >=4)
+				{
+            ls_th0 = th0;           
+            if (ls_th0<100) 
+                ls_th0 = 100;            
+            dif_max = ls_dif;
+            th0 = dif_max - dif_min;
+            if (th0>=0.5*ls_th0)
+						{
+							 number = number + 1;
+							 NRF_LOG_INFO("number = %d\r\n", number);
+               point_buf[number] = dif_index; 
+               //NRF_LOG_RAW_INFO("%d\r\n", dif_index);				
+						}                            
+				}
+        ctinu_dif_count = 0;
+		}
+			SigwaveLength++;
+}
+
+
+void detect( uint16_t source_data,uint32_t buf_len, int32_t *p_buf, uint32_t n)
+{	
+	int8_t j = 1;
+	uint32_t heart_buf_sum = 0;
+	static uint8_t heart_temp = 0;
+	int8_t flag_len = 0;
+	uint8_t temp_max = 40;
+	uint8_t tem_min = 200;
+	if (n == 6)
+	{
+		j = 1;
+		//NRF_LOG_RAW_INFO("%d\r\n", buf_len);
+		while (j < buf_len)
+		{			
+				heart_temp = 25 * 60 / (p_buf[j + 1] - p_buf[j]);
+				if (heart_temp<100 && heart_temp>40)
+				{
+					heart_buf_sum = heart_buf_sum + heart_temp;
+					flag_len = flag_len + 1;
+					if (heart_temp>temp_max)
+						temp_max = heart_temp;
+					if (tem_min>heart_temp)
+						tem_min = heart_temp;
+				}
+				j = j + 1;						
+		}
+		if (flag_len >2)
+		{
+			heart0 = (heart_buf_sum - tem_min - temp_max) / (flag_len - 2);
+		}
+		else	
+		{            
+				heart0 = 0;
+		}
+		point_buf[1] = point_buf[buf_len];      
+		buf_len = 0;
+		//NRF_LOG_RAW_INFO("%d\r\n", source_data);
+		if(heart0 == 0&&(source_data>60000||source_data==0))
+		{
+			no_pulse_wave = 3;
+			//NRF_LOG_RAW_INFO("%d\r\n", no_pulse_wave);
+			//NRF_LOG_RAW_INFO("%d\r\n", n);
+		}
+		if(heart0 == 0&&source_data<=60000&&source_data>0)
+		{
+			no_pulse_wave = 1;
+			//NRF_LOG_RAW_INFO("%d\r\n", no_pulse_wave);
+		}
+	}
+	if(n>6)
+	{
+		//信号比较差的情况下的显示no_pulse_wave = 1；
+		if(ls_heart == heart0&&(source_data>60000||source_data==0))
+		{
+		  ctinu_equal_heart++;
+			//NRF_LOG_RAW_INFO("%d\r\n", ctinu_equal_heart);
+			//NRF_LOG_RAW_INFO("%d\r\n", source_data);
+			if(ctinu_equal_heart == 6)//&&(source_data>61000||source_data==0)
+			{
+				no_pulse_wave = 3;				
+			  ctinu_equal_heart = 0;
+			}
+		}
+		else
+		{			
+			ctinu_equal_heart = 0;
+		}
+		if(ls_heart == heart0&&(source_data<=60000&&source_data>0))
+		{
+			//NRF_LOG_RAW_INFO("%d\r\n", signal_quality);
+			//NRF_LOG_RAW_INFO("%d\r\n", source_data);
+		    signal_quality++;
+			  if(ctinu_equal_heart == 8 )//&&(source_data<=61000&&source_data>0)
+			  {
+				  no_pulse_wave = 1;			
+			    signal_quality = 0;
+			  }	
+		}
+		else
+		{			
+			  signal_quality = 0;
+		}
+		flag_heart = 0;
+		//NRF_LOG_RAW_INFO("%d\r\n", buf_len);			
+		while (j < buf_len)
+		{							
+			ls_heart = heart0;			
+			heart = 25 * 60 / (p_buf[j+1] - p_buf[j]);
+			j = j + 1; 			
+			if (heart<40 || heart>200)
+			{
+				heart = ls_heart;
+			}
+			else
+			{
+				if((heart - heart0)>15&&source_data<=60000)
+				 j_ctinu_heart = j_ctinu_heart + 1;
+		    else
+				 j_ctinu_heart = 0;
+        if((heart-heart0)<-15&&source_data<=60000)
+				 n_ctinu_heart = n_ctinu_heart + 1;
+		    else
+				 n_ctinu_heart = 0;				
+		   if ((j_ctinu_heart == 5||n_ctinu_heart == 5)&&source_data<=60000)
+		   {				
+			   heart0 = heart;
+			   flag_heart = 1;
+         j_ctinu_heart = 0;
+				 n_ctinu_heart = 0;
+				 len = 0;	
+         heart_sum = 0;
+				 average_heart = 0;
+		   }
+                   	        		 
+			if (ls_heart > 0&&flag_heart==0)
+			{
+				heart_sum = heart_sum + ls_heart;
+			  len = len + 1;
+			  average_heart = heart_sum / (len);
+			}
+				if ((average_heart - heart) <= 15 && (average_heart - heart) >= -15)
+				{
+					if ((average_heart - heart) <= 8 && (average_heart - heart)>0 &&heart0>=heart-2)
+					{
+						heart0 = heart0 - 1;
+					}
+					if (((average_heart - heart) <= 15 && (average_heart - heart)>8 &&heart0>=heart-1)||((average_heart - heart) < -8 && (average_heart - heart)>=-15 &&heart0<heart))
+					{				
+						change_len = change_len +1;
+						if(change_len == 3)
+						{
+						    heart0 = (int8_t)(0.7*heart0) + (int8_t)(0.2*heart) + (int8_t)(0.1*average_heart);
+							  change_len = 0;
+						}							
+					} 
+					else
+					{
+						change_len = 0;
+					}
+					if ((average_heart - heart) <= 0 && (average_heart - heart) >= -8&&heart>=heart0+3)
+					{
+						heart0 = heart0 + 1;
+					}				                
+				}			
+				
+				if(average_heart == 0 && heart0 == 0)
+            heart0 = heart;                    
+			  if((average_heart-heart>15)&&(average_heart-heart<-15)&&(flag_heart == 0)&&average_heart>0)
+				{ 					
+					if(ls_heart == average_heart)
+					{
+						if(ls_heart+15<heart)
+						{
+							//heart_sum = 0;
+							//len = 0;
+						  heart0 = ls_heart;
+						}						
+						else
+						{
+							//if(len<10)
+							//{
+							  //heart0 = heart;
+							  //len = 0;	
+                //heart_sum = 0;
+							//}
+							//else
+								heart0 = ls_heart;							
+						}						
+					}                
+				  else if((average_heart-heart)>15||(ls_heart-heart)>15)
+				 {
+					 heart0 = ls_heart;
+					 //heart_sum = 0;
+					 //len = 0;	
+				 }
+				 else if((average_heart-heart)<-15||(ls_heart-heart)<-15)
+				 {
+					 heart0 = ls_heart;
+					 //heart_sum = 0;
+					 //len = 0;	
+				 } 
+          //heart_sum = 0;
+          //len = 0;	
+          //average_heart	= 0;		 
+				}     
+			}
+		}	
+    point_buf[1] = point_buf[buf_len];      
+		buf_len = 0;		
+	}
+}
+
+//读取心率数据
+uint8_t GetHeartRateValue(void)
+{
+	  return 	heart0;
+}
+//读取信号状态
+uint8_t GetSignalsState(void)
+{
+	  uint8_t temp = 0;
+	  temp = no_pulse_wave;
+	  no_pulse_wave = 0;
+    return 	temp;
+}
+
+static uint32_t Algo_count = 0;
+static uint32_t Algo_Num = 0;
+
+/*******************************************************
+* 功能：计算心率数据
+* 参数：心率传感器采集到的数据
+* 返回值：1 - 可以调用GetHeartValue函数读取心率值  
+*******************************************************/
+uint8_t CalHeartRateValue(uint16_t uAdcData)
+{
+	    //NRF_LOG_RAW_INFO("%d\r\n", uAdcData);	//dele
+	    Algo_count++;
+	    whether_saturation_is_saturated(uAdcData);
+	
+	    //if(Algo_count==1)
+	    // NRF_LOG_RAW_INFO("%d\r\n", Algo_count);		
+		  smooth_heart_rate_data(Algo_count, SMOOTH_WINDOWS_HEART_RATE, uAdcData);
+	    smooth_heart_rate_data(Algo_count, SMOOTH_WINDOWS_HEART_RATE_next, smooth_data_heart_rate);
+	    smooth_heart_rate_data(Algo_count, SMOOTH_WINDOWS_HEART_RATE_next_two, smooth_data_heart_rate);
+	    smooth_heart_rate_data(Algo_count, SMOOTH_WINDOWS_HEART_RATE_next_three, smooth_data_heart_rate);
+	    smooth_heart_rate_data(Algo_count, SMOOTH_WINDOWS_HEART_RATE_next_four, smooth_data_heart_rate);
+      diff(Algo_count, DIF_WINDOWS, smooth_data_heart_rate); 
+    	     	
+      if(Algo_count % 25 == 0)
+      {           
+         Algo_Num = Algo_Num + 1;
+         if(Algo_Num >= 6)
+         {
+             detect(uAdcData,number, point_buf, Algo_Num);
+             number = 1;
+					   Algo_Num = 7;					 
+					   return 1;
+         }
+     } 		
+		 return 0;
+}
+
+void clear_heart_rate_data_handle_para(void)
+{
+	  int i = 0;
+		
+	  Algo_count = 0;
+	  Algo_Num = 0;
+	  smooth_data_heart_rate = 0;
+    number = 0;
+	  dif = 1;
+	  ls_dif = 1;
+	  point_buf_len = 0;
+	  th0 = 100;
+	  ls_th0 = 100;
+	  dif_max = 0;
+	  flag = 0;
+	  heart0 = 0;
+	  ls_heart = 0;
+	  heart = 0;
+	  average_heart = 0;
+	  heart_sum = 0;
+	  len = 0;
+    no_pulse_wave = 0;
+    ctinu_equal_data = 0;
+    ls_data = 0;
+    cur_data = 0;
+		signal_quality = 0;
+		for(i=0;i<sizeof(SMOOTH_WINDOWS_HEART_RATE); i++)
+		{
+				SMOOTH_WINDOWS_HEART_RATE[i] =0;
+			  SMOOTH_WINDOWS_HEART_RATE_next[i] = 0;
+			  SMOOTH_WINDOWS_HEART_RATE_next_two[i] = 0;
+			  SMOOTH_WINDOWS_HEART_RATE_next_three[i] = 0;
+			  SMOOTH_WINDOWS_HEART_RATE_next_four[i] = 0;
+		}
+				
+		for(i=0;i<sizeof(DIF_WINDOWS); i++)
+				DIF_WINDOWS[i] =0;		
+}
+
+void Get_userifo_init(void)
+{
+	user_age =get_user_info_age();
+	user_height =get_user_info_height();
+	user_weight =get_user_info_weight();
+	user_gender =get_user_info_gender();
+}
+
+void Blood_pressure_init(void)
+{
+	Get_userifo_init();
+}
+
+
+/*******************************************************
+* 功能：计算血压结果
+* 参数：PPG原始数据，Si114x_functions.c-->void Process_Si114x_INT(void)
+-->if(CalHeartRateValue(tmpData) &&CalBloodpressureValue(tmpData))
+* 返回值：1 - 可以调用GetBloodpressureValue函数读取血压值  
+*******************************************************/
+
+uint8_t CalBloodpressureValue(void)
+{ 
+	uint8_t hr,time;
+	uint8_t PI_A;
+	Get_userifo_init();
+	PI_A=Get_PPG_Ps_Pd();
+	hr=GetHeartRateValue();
+	time++;
+	if(hr!= 0 && PI_A<40)
+		{
+	
+			if(user_gender)//血压区分男女；
+			{
+				if( user_weight>=60)
+					{
+						if(hr>80)
+						{
+							//W>60,H>170,hr>80
+							PS=110+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.2+PI_A*0.3;
+							PD=70+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.1+PI_A*0.3;
+						}
+				   else 
+					  {
+							//W>60,H>170,hr<80
+					  	PS=110+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.2-PI_A*0.3;
+					  	PD=70+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.1-PI_A*0.3;
+					  }
+					}
+				else 
+				{
+					if(hr>80)
+						{
+							PS=100+user_age/20+(user_weight/50)*3-(user_height-170)*0.3+(hr-80)*0.2+PI_A*0.3;
+					  	PD=60+user_age/20+(user_weight/50)*3-(user_height-170)*0.3+(hr-80)*0.1+PI_A*0.3;
+						}
+				   else 
+					  { 
+					  	PS=100+user_age/20+(user_weight/50)*3-(user_height-170)*0.3-(hr-80)*0.2-PI_A*0.3;
+					  	PD=60+user_age/20+(user_weight/50)*3-(user_height-170)*0.3-(hr-80)*0.1-PI_A*0.3;
+					  }
+				}
+			}
+				else 
+				{
+					if( user_weight>=60)
+					{
+						if(hr>70)
+						{
+							PS=110+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.2+PI_A*0.3;
+							PD=70+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.1+PI_A*0.3;
+						}
+				   else 
+					  {
+					  	//W>60,H>170,hr<80
+					  	PS=110+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.2-PI_A*0.3;
+					  	PD=70+user_age/20+(user_weight/50)*3+(user_height-170)*0.3+(hr-80)*0.1-PI_A*0.3;
+					  }
+					}
+				else 
+				{
+					if(hr>70)
+						{
+							PS=90+user_age/20+(user_weight/50)*3-(user_height-170)*0.3+(hr-80)*0.2+PI_A*0.3;
+					  	PD=60+user_age/20+(user_weight/50)*3-(user_height-170)*0.3+(hr-80)*0.1+PI_A*0.3;
+						}
+				   else 
+					  { 
+					  	PS=90+user_age/20+(user_weight/50)*3-(user_height-170)*0.3-(hr-80)*0.2-PI_A*0.3;
+					  	PD=60+user_age/20+(user_weight/50)*3-(user_height-170)*0.3-(hr-80)*0.1-PI_A*0.3;
+					  }
+				}
+				
+				}	
+		}
+	if(PS!=0 && PD!=0)
+		return 1;
+	else 
+		return 0;
+}
+uint8_t Get_PPG_Ps_Pd(void)	
+{
+	uint8_t PI;
+	PI=(PPG_Ps-PPG_Pd)*0.01;
+	return PI;
+	//return PPG_PS_average;
+}
+/*********************************
+uint8_t Get_PI_Return(void)
+{
+	uint8_t PI_A,PI_SUM;
+	PI_A=Get_PPG_Ps_Pd();
+	for(i=0;i<6;i++)
+		{
+			PPG_PS_Sum+=PPG_Ps;
+			PPG_PD_Sum+=PPG_Pd;
+		}
+	PPG_PS_average=PPG_PS_Sum/6;
+	PPG_PD_average=PPG_PD_Sum/6;
+	PI=(PPG_PS_average-PPG_PD_average)*0.01;	
+}
+**********************************/
+	/*******************************************************
+* 功能：计算心率数据
+* 参数：心率传感器采集到的数据
+* 返回值：1 - 可以调用GetBloodpressureValue函数读取血压值  
+*******************************************************/
+uint8_t GetBloodpressure_PS_Value(uint16_t uAdcData)
+{
+	return PS;
+}
+uint8_t GetBloodpressure_PD_Value(uint16_t uAdcData)
+{
+	return PD;
+}
+void Clear_Blood_Pressure(void)
+{		
+	PS=0;
+	PD=0;
+	PPG_Pd=0;
+	PPG_Ps=0;
+	PPG_PS_Sum=0;
+	PPG_PD_Sum=0;
+	PPG_PS_average =0;
+	PPG_PD_average =0;
+
+}

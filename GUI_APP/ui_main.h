@@ -1,0 +1,35 @@
+#ifndef __UI_DIGIT_TIME_H__
+#define __UI_DIGIT_TIME_H__
+
+typedef enum
+{
+	UIM_DISPLAY_AREA_BLUETOOTH = 0,
+	UIM_DISPLAY_AREA_DATE,
+	UIM_DISPLAY_AREA_BATTERY,
+	UIM_DISPLAY_AREA_TIME_HOUR,
+	UIM_DISPLAY_AREA_TIME_MINUTE,
+	UIM_DISPLAY_AREA_WEEK,
+	UIM_DISPLAY_AREA_HEART_RATE,
+	UIM_DISPLAY_AREA_BLOOD_PRESSURE,
+	UIM_DISPLAY_AREA_OVAL_FRAME_01,
+	UIM_DISPLAY_AREA_OVAL_FRAME_02,
+	UIM_DISPLAY_AREA_HR_DATA,
+	UIM_DISPLAY_AREA_BP_DATA,
+	UIM_DISPLAY_AREA_MAX
+}uim_display_area_t;
+
+extern void ui_main_enter(void);
+extern void ui_main_exit(void);
+extern void ui_main_show(void);
+extern void ui_main_init(void);
+
+#endif
+
+
+
+
+
+
+
+
+

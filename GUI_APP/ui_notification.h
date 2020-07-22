@@ -1,0 +1,21 @@
+#ifndef __UI_NOTIFICATION_H__
+#define __UI_NOTIFICATION_H__
+
+enum
+{
+	UINTFN_DISPLAY_AREA_ICON_MESSAGE = 0,
+	UINTFN_DISPLAY_AREA_ICON_OVAL_FRAME,
+	UINTFN_DISPLAY_AREA_NOTIFCATION_DETAIL,
+	UINTFN_DISPLAY_AREA_ICON_INCOMING_CALL,
+	UINTFN_DISPLAY_AREA_ICON_INCOMING_CALL_TIME,
+	UINTFN_DISPLAY_AREA_ICON_INCOMING_CALL_NAME,
+	UINTFN_DISPLAY_AREA_ICON_INCOMING_CALL_DURATION,
+	UINTFN_DISPLAY_AREA_MAX,
+};
+
+extern void ui_notification_enter(void);
+extern void ui_notification_exit(void);
+extern void ui_notification_show(void);
+extern void ui_notification_init(void);
+
+#endif
