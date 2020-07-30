@@ -106,7 +106,7 @@ static void system_timer_timeout_handler(TimerHandle_t xTimer)
 	static uint8_t i = (uint8_t)UI_MAIN;
     UNUSED_PARAMETER(xTimer);
 
-	NRF_LOG_INFO("system_running_time:%ld\r\n", system_running_time);
+	NRF_LOG_INFO("system_running_time:%ld", system_running_time);
 
 	#if 1
     //set_show_ui(i);

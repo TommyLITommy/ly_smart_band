@@ -547,6 +547,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\GUI_APP\ui_ts_tire_select_suv.c</FilePath>
             </File>
+            <File>
+              <FileName>ui_ts_tire_binding.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\GUI_APP\ui_ts_tire_binding.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -897,6 +902,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\GUI_DRV\icon_tire_select.c</FilePath>
             </File>
+            <File>
+              <FileName>icon_tire_binding_name.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\GUI_DRV\icon_tire_binding_name.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -936,6 +946,11 @@
               <FileName>calendar.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\SYSTEM\calendar.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_event.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\SYSTEM\ly_event.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -6010,6 +6025,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\GUI_APP\ui_ts_tire_select_suv.c</FilePath>
             </File>
+            <File>
+              <FileName>ui_ts_tire_binding.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\GUI_APP\ui_ts_tire_binding.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6360,6 +6380,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\GUI_DRV\icon_tire_select.c</FilePath>
             </File>
+            <File>
+              <FileName>icon_tire_binding_name.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\GUI_DRV\icon_tire_binding_name.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6399,6 +6424,11 @@
               <FileName>calendar.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\SYSTEM\calendar.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_event.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\SYSTEM\ly_event.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -261,6 +261,44 @@ void st7789_draw_picture(uint16_t x, uint16_t y, uint16_t length, uint16_t width
 	ST7789_DC_CLR();
 }
 
+#if 0
+void st7789_draw_picture_from_flash(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint32_t icon_flash_address)
+{
+	uint8_t buffer[240 * 2];
+	uint32_t total_size;
+	uint32_t index = 0;
+	uint32_t read_size;
+	total_size = length * width * 2;
+	set_addr_window(x, y, x + length - 1, y + width - 1);
+	
+	ST7789_DC_SET();
+
+	while(index < total_size)
+	{
+		if((index + 240 * 2) < total_size)
+		{
+			read_size = 240 * 2;
+		}
+		else
+		{
+			read_size = total_size - index;
+		}
+
+		extern void drv_flash_read(uint32_t address, uint8_t *p_buffer, uint32_t length);
+		drv_flash_read(address + index, buffer, read_size);
+
+		index += read_size;
+
+		for(uint16_t i = 0; i < read_size; i++)
+		{
+			spi_write(&buffer[i], sizeof(buffer[i]));
+		}		
+	}
+	
+	ST7789_DC_CLR();
+}
+#endif
+
 void st7789_fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
 	uint16_t i, j;

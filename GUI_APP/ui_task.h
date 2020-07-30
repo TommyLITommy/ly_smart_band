@@ -1,6 +1,8 @@
 #ifndef __UI_TASK_H__
 #define __UI_TASK_H__
 
+#include "ly_event.h"
+
 typedef enum
 {
 	UI_MAIN = 0,
@@ -24,6 +26,7 @@ typedef enum
 typedef void(*ui_show_func_t)(void);
 typedef void(*ui_enter_func_t)(void);
 typedef void(*ui_exit_func_t)(void);
+typedef void(*ui_event_handler_t)(ly_event_t *p_ly_event);
 
 extern void ui_next(void);
 extern void ui_task(void *param);

@@ -4,6 +4,15 @@
 #include "sdk_common.h"
 #include "display_area.h"
 
+typedef struct
+{
+	uint32_t offset;
+	uint32_t size;
+	uint32_t length;
+	uint32_t width;
+}icon_info_t;
+
+
 typedef enum
 {
 	//ui_main
@@ -71,6 +80,13 @@ typedef enum
     ICON_ID_TP_CAR_SUV_V_TIRE_GRAY,
 	ICON_ID_MAX,
 }icon_id_t;
+
+typedef struct
+{
+    uint32_t offset;
+    uint32_t size;
+}icon_font_flash_info_t;
+
 
 extern void draw_icon(const display_area_t *p_display_area, uint8_t icon_id);
 

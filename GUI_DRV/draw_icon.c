@@ -2,6 +2,7 @@
 #include "hal_lcd.h"
 #include "draw_icon.h"
 #include "st7789.h"
+#include "drv_flash.h"
 
 //#define ENABLE_UI_MAIN
 //#define EANBLE_UI_ANALOG_CLOCK
@@ -214,8 +215,137 @@ const uint8_t *icon_array[ICON_ID_MAX] =
 	icon_car_suv_v_tire_gray,//ICON_ID_TP_CAR_SUV_V_TIRE_GRAY,
 };
 
+
+#if 0
+const icon_info_t icon_info[ICON_ID_MAX] =
+{
+	{},//ICON_ID_BLUETOOTH,
+	{},//ICON_ID_BATTERY_00,
+	{},//ICON_ID_BATTERY_01,
+	{},//ICON_ID_BATTERY_02,
+	{},//ICON_ID_BATTERY_03,
+	{},//ICON_ID_BATTERY_04,
+	{},//ICON_ID_HEART_RATE,
+	{},//ICON_ID_BLOOD_PRESSURE,
+	{},//ICON_ID_OVAL_FRAME_01,
+	{},//ICON_ID_OVAL_FRAME_02,
+	//ui_analog_clock
+	{},//ICON_ID_ANALOG_CLOCK_DIAL,
+	{},//ICON_ID_ANALOG_CLOCK_HAND_HOUR,
+	{},//ICON_ID_ANALOG_CLOCK_HAND_MINUTE,
+	//ui_heart_rate_measure
+	{},//ICON_ID_HEART_RATE_ICON,
+	{},//ICON_ID_HERAT_RATE_UNIT,
+	//ui_blood_pressure_measure
+	{},//ICON_ID_BLOOD_PRESSURE_ICON,
+	{},//ICON_ID_BLOOD_PRESSURE_UNIT,
+	//ui_notification
+	{},//ICON_ID_QQ,
+	{},//ICON_ID_WECHAT,
+	{},//ICON_ID_TEXT,
+	{},//ICON_ID_INCOMING_CALL,
+	{},//ICON_ID_OVAL_FRAME_03,
+	{},//ICON_ID_CIRCLE_01_BLUE,
+	{},//ICON_ID_CIRCLE_01_GRAY,
+	//ui_charging
+	{},//ICON_ID_CHARGING_00,
+	{},//ICON_ID_CHARGING_01,
+	{},//ICON_ID_CHARGING_02,
+	{},//ICON_ID_CHARGING_03,
+	{},//ICON_ID_CHARGING_04,
+	//ui_tire_setting
+	{},//ICON_ID_TIRE_SETTING_ICON,
+	{},//ICON_ID_TIRE_SETTING_NAME,
+	//ui_ts_type_select
+	{},//ICON_ID_CIRCLE_02_BLUE,
+	{},//ICON_ID_CIRCLE_02_WHITE,
+	/*tire select*/
+	{},//ICON_ID_TS_CIRCLE_BLUE,
+	{},//ICON_ID_TS_CIRCLE_DARK_GRAY,
+	{},//ICON_ID_TS_BACK_SELECT,
+	{},//ICON_ID_TS_BACK_DESELECT,
+	{},//ICON_ID_TS_OK_SELECT,
+	{},//ICON_ID_TS_OK_DESELECT,
+	{},//ICON_ID_TS_TIRE_BINDING_NAME,
+	//ui_tp_motor
+	{},//ICON_ID_TP_MOTOR_BODY,
+	{},//ICON_ID_TP_MOTOR_TIRE_RED,
+	{},//ICON_ID_TP_MOTOR_TIRE_BLUE,
+	{},//ICON_ID_TP_MOTOR_TIRE_GRAY,
+	//ui_tp_car ui_tp_suv
+	{},//ICON_ID_TP_CAR_BODY,
+	{},//ICON_ID_TP_SUV_BODY,
+    {},//ICON_ID_TP_CAR_SUV_H_TIRE_RED,
+    {},//ICON_ID_TP_CAR_SUV_H_TIRE_BLUE,
+    {},//ICON_ID_TP_CAR_SUV_H_TIRE_GRAY,
+    {},//ICON_ID_TP_CAR_SUV_V_TIRE_RED,
+    {},//ICON_ID_TP_CAR_SUV_V_TIRE_BLUE,
+    {},//ICON_ID_TP_CAR_SUV_V_TIRE_GRAY,
+}
+#endif
+
+const icon_font_flash_info_t icon_font_flash_info[ICON_ID_MAX] = {
+    { 0 , 640 },
+    { 640 , 1200 },
+    { 1840 , 1200 },
+    { 3040 , 1200 },
+    { 4240 , 1200 },
+    { 5440 , 1200 },
+    { 6640 , 960 },
+    { 7600 , 1008 },
+    { 8608 , 9200 },
+    { 17808 , 9200 },
+    { 4294967295 , 0 },
+    { 4294967295 , 0 },
+    { 4294967295 , 0 },
+    { 27008 , 35912 },
+    { 4294967295 , 0 },
+    { 62920 , 35912 },
+    { 4294967295 , 0 },
+    { 98832 , 3200 },
+    { 102032 , 3200 },
+    { 105232 , 3200 },
+    { 108432 , 7200 },
+    { 115632 , 22000 },
+    { 4294967295 , 0 },
+    { 4294967295 , 0 },
+    { 137632 , 37400 },
+    { 175032 , 37400 },
+    { 212432 , 37400 },
+    { 249832 , 37400 },
+    { 287232 , 37400 },
+    { 324632 , 49928 },
+    { 374560 , 3160 },
+    { 377720 , 8192 },
+    { 385912 , 8192 },
+    { 394104 , 5000 },
+    { 399104 , 5000 },
+    { 404104 , 2592 },
+    { 406696 , 2592 },
+    { 409288 , 2592 },
+    { 411880 , 2592 },
+    { 414472 , 2556 },
+    { 417028 , 40404 },
+    { 4294967295 , 0 },
+    { 4294967295 , 0 },
+    { 4294967295 , 0 },
+    { 457432 , 34560 },
+    { 491992 , 34560 },
+    { 526552 , 480 },
+    { 527032 , 480 },
+    { 527512 , 480 },
+    { 527992 , 594 },
+    { 528586 , 594 },
+    { 529180 , 594 },
+};
+
+
+/*This is a asynchronous call for uart or ble*/
+
+//There need start a timer? or using freertos's task scheduler！！！
 void draw_icon(const display_area_t *p_display_area, uint8_t icon_id)
 {
+	uint16_t y = 0;
     //st7789_fill(0, 0, 100, 100, BRED);
     /*
     st7789_draw_picture(20,
@@ -227,6 +357,21 @@ void draw_icon(const display_area_t *p_display_area, uint8_t icon_id)
     //read data from flash or pc or mobile phone!!!
     //DMA???
 
+	//read one line each time!!!
+	uint8_t line_buffer[240 * 2];
+	for(uint16_t i = 0; i < p_display_area->width; i++)
+	{
+		//read one line from flash or pc or mobile phone
+		drv_flash_read(FLASH_FIRST_SECTOR_START_ADDRESS + icon_font_flash_info[icon_id], line_buffer, p_display_area->length);
+		hardware.hal_lcd.lcd_draw_picture(p_display_area->x_start,
+						  p_display_area->y_start + y, 
+						  p_display_area->length, 
+						  p_display_area->width, 
+						  line_buffer);
+		y++;
+	}
+
+	#if 0
 	if(icon_array[icon_id] != NULL)
 	{
 		hardware.hal_lcd.lcd_draw_picture(p_display_area->x_start,
@@ -235,4 +380,5 @@ void draw_icon(const display_area_t *p_display_area, uint8_t icon_id)
 								  p_display_area->width, 
 								  icon_array[icon_id]);
 	}
+	#endif
 };
