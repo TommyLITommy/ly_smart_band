@@ -1,8 +1,10 @@
+#if 0
+#include "sdk_config.h"
 #include "drv_si114x.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
 #include "heart_rate_data_handle.h"
-#include "display_character.h"
+//#include "display_character.h"
 #include "nrf_drv_gpiote.h"
 #include "app_error.h"
 #include "nrf_log.h"
@@ -13,12 +15,6 @@
 
 #include "global_config.h"
 #include "ble_nus.h"
-#include "log_print.h"
-#include "watch_event_queue.h"
-
-#include "watch_mode_heart_rate.h"
-#include "watch_mode_blood_pressure.h"
-#include "whole_day_measure.h"
 #include "pin_definition.h"
 
 /************************************************************
@@ -41,12 +37,12 @@ uint32_t gu32Si114xAdjustNum = 0;//波形调整的次数
 #define Si1142_PART_ID            0x42  //si1142的PART ID
 #define Si114x_I2C_ADDRESS        0x5A  //slave address 
 
-/*
+#if 1
 #define Si114x_INT_PIN            11    //中断输出引脚  
 #define Si114x_SDA_PIN            12    //I2C数据线
 #define Si114x_SCL_PIN            13    //I2C时钟线
 #define Si114x_vLED_EN_PIN        14    //Si114x LED供电使能引脚
-*/
+#endif
 
 #define MASTER_TWI_INSTANCE       0    //!< TWI interface used as a master accessing Si114x
 
@@ -1254,7 +1250,7 @@ void si114x_Int_handle(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
 	  uint16_t uheartData = 0;
 	  uint8_t  uWaveState = 0;//波形状态 0 - 可以，1 - 不好  2 - 饱和
-	  watch_evt_t watch_evt;
+	  //watch_evt_t watch_evt;
 
 	  //NRF_LOG_RAW_INFO("si114x_Int_handle\r\n");
 #if TIME_SAMPS_DEBUG
@@ -1286,8 +1282,8 @@ void si114x_Int_handle(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 			  if(uWaveState ==  NO_WEAR)
 				{
 					u8GbWrsitIsWearing = false;
-					watch_evt.watch_evt_id = WATCH_EVT_NO_WEAR;
-					u32WatchEventQueuePut(&structWatchEventQueueArray[eWATCH_EVENT_QUEUE_ID_2], &watch_evt);
+					//watch_evt.watch_evt_id = WATCH_EVT_NO_WEAR;
+					//u32WatchEventQueuePut(&structWatchEventQueueArray[eWATCH_EVENT_QUEUE_ID_2], &watch_evt);
 					NRF_LOG_RAW_INFO("!!!si114x_Int_handler:WATCH_EVT_NO_WEAR\r\n");
 				}
 				else
@@ -1526,12 +1522,12 @@ uint8_t  Auto_Measurement_Set(Si114x_auto_t autoFlg)
 					} 
 
 					/*Attention Please, When we start test, we will clear all old data*/
-					structWatchModeHeartRate.u8HeartRate = 0;
-                    structWatchModeBloodPressure.u8SystolicPressure = 0;
-					structWatchModeBloodPressure.u8DiatolicPressure = 0;
-					structGbWholeDayMeasure.u8BloodPressureDiatolicPressure = 0;
-					structGbWholeDayMeasure.u8BloodPressureSystolicPressure = 0;
-					structGbWholeDayMeasure.u8HeartRate = 0;
+					//structWatchModeHeartRate.u8HeartRate = 0;
+                    //structWatchModeBloodPressure.u8SystolicPressure = 0;
+					//structWatchModeBloodPressure.u8DiatolicPressure = 0;
+					//structGbWholeDayMeasure.u8BloodPressureDiatolicPressure = 0;
+					//structGbWholeDayMeasure.u8BloodPressureSystolicPressure = 0;
+					//structGbWholeDayMeasure.u8HeartRate = 0;
 					
 					Si114x_vLED_Init();
 					Si114x_vLED_Enable();
@@ -1734,5 +1730,5 @@ void si114x_Auto_On_Off_timer_init(void)
 }
 
 #endif
-
+#endif
 

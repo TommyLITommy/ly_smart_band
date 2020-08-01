@@ -1,3 +1,4 @@
+#if 0
 /******************** (C) COPYRIGHT 2012 STMicroelectronics ********************
 * File Name          : lis3dh_driver.h
 * Author             : MSH Application Team
@@ -539,5 +540,5 @@ u8_t LIS3DH_WriteReg(u8_t Reg, u8_t Data);
 
 /******************* (C) COPYRIGHT 2012 STMicroelectronics *****END OF FILE****/
 
-
+#endif
 

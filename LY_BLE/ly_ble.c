@@ -12,7 +12,6 @@
 #include "ble_hrs.h"
 #include "ble_dis.h"
 #include "ble_conn_params.h"
-#include "sensorsim.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_soc.h"
 #include "nrf_sdh_ble.h"
@@ -35,6 +34,8 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
+
+#include "global_config.h"
 
 #include "ly_ble_tus_c.h"
 #include "ly_ble_ancs_c.h"
@@ -60,7 +61,7 @@
 
 #define CONN_CFG_TAG						1
 
-BLE_DB_DISCOVERY_ARRAY_DEF(m_db_discovery, NRF_SDH_BLE_CENTRAL_LINK_COUNT); 
+BLE_DB_DISCOVERY_ARRAY_DEF(m_db_discovery, NRF_SDH_BLE_TOTAL_LINK_COUNT); 
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 
 static ly_ble_c_t ly_ble_c;
@@ -106,7 +107,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     // Based on the role this device plays in the connection, dispatch to the right handler.
     if (role == BLE_GAP_ROLE_PERIPH || ble_evt_is_advertising_timeout(p_ble_evt))
     {
-    	 pm_handler_secure_on_connection(p_ble_evt);
+    	#ifdef ENABLE_PAIRING
+    	pm_handler_secure_on_connection(p_ble_evt);
+		#endif
 		ly_ble_p.on_ble_peripheral_evt(p_ble_evt);
     }
     else if ((role == BLE_GAP_ROLE_CENTRAL) || (p_ble_evt->header.evt_id == BLE_GAP_EVT_ADV_REPORT))
@@ -161,46 +164,6 @@ static void ble_stack_init(void)//Tommy Debug, Pay more attention to the ram use
 	err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
     APP_ERROR_CHECK(err_code);
 
-	#if 0
-    ble_cfg_t ble_cfg;
-    
-	//Config the vendor secific uuid
-	memset(&ble_cfg, 0, sizeof(ble_cfg));
-	ble_cfg.common_cfg.vs_uuid_cfg.vs_uuid_count = VENDOR_SPECIFIC_UUID_COUNT;
-	err_code = sd_ble_cfg_set(BLE_COMMON_CFG_VS_UUID, &ble_cfg, ram_start);
-	APP_ERROR_CHECK(err_code);
-
-	//Config the maximum number of the connections
-	memset(&ble_cfg, 0, sizeof(ble_cfg));
-    ble_cfg.gap_cfg.role_count_cfg.periph_role_count  = NRF_SDH_BLE_PERIPHERAL_LINK_COUNT;
-    ble_cfg.gap_cfg.role_count_cfg.central_role_count = NRF_SDH_BLE_CENTRAL_LINK_COUNT;
-    ble_cfg.gap_cfg.role_count_cfg.central_sec_count  = BLE_GAP_ROLE_COUNT_CENTRAL_SEC_DEFAULT;//What is this?
-    err_code = sd_ble_cfg_set(BLE_GAP_CFG_ROLE_COUNT, &ble_cfg, ram_start);
-    APP_ERROR_CHECK(err_code);
-
-	// Configure the maximum ATT MTU.
-    memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-    ble_cfg.conn_cfg.conn_cfg_tag                 = CONN_CFG_TAG;
-    ble_cfg.conn_cfg.params.gatt_conn_cfg.att_mtu = NRF_SDH_BLE_GATT_MAX_MTU_SIZE;
-    err_code = sd_ble_cfg_set(BLE_CONN_CFG_GATT, &ble_cfg, ram_start);
-    APP_ERROR_CHECK(err_code);
-	
-	// Configure the maximum event length.
-    /*è¿™é‡Œçš„event_lengthæ˜¯å¹²ä»€ä¹ˆçš„ï¼Ÿï¼Ÿï¼Ÿ*/
-    memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-    ble_cfg.conn_cfg.conn_cfg_tag                     = CONN_CFG_TAG;
-    ble_cfg.conn_cfg.params.gap_conn_cfg.event_length = 320;
-    ble_cfg.conn_cfg.params.gap_conn_cfg.conn_count   = BLE_GAP_CONN_COUNT_DEFAULT;
-    err_code = sd_ble_cfg_set(BLE_CONN_CFG_GAP, &ble_cfg, ram_start);
-    APP_ERROR_CHECK(err_code);
-
-	// Configure the attribute table size, but how do i know the exactly attribute table size needed
-	memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-	ble_cfg.gatts_cfg.attr_tab_size.attr_tab_size = 2000;//Attention Please
-	err_code = sd_ble_cfg_set(BLE_GATTS_CFG_ATTR_TAB_SIZE, &ble_cfg, ram_start);
-	APP_ERROR_CHECK(err_code);
-
-	#endif
     // Enable BLE stack.
     err_code = nrf_sdh_ble_enable(&ram_start);
     APP_ERROR_CHECK(err_code);
@@ -224,14 +187,14 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
     {
 		case PM_EVT_BONDED_PEER_CONNECTED:           /**< @brief A connected peer has been identified as one with which we have a bond. When performing bonding with a peer for the first time, this event will not be sent until a new connection is established with the peer. When we are central, this event is always sent when the Peer Manager receives the @ref BLE_GAP_EVT_CONNECTED event. When we are peripheral, this event might in rare cases arrive later. */
 			NRF_LOG_INFO("PM_EVT_BONDED_PEER_CONNECTED");
-			ly_ble_db_discovery_start(p_evt->conn_handle);
+			//ly_ble_db_discovery_start(p_evt->conn_handle);
 			break;
 		case PM_EVT_CONN_SEC_START:                  /**< @brief A security procedure has started on a link, initiated either locally or remotely. The security procedure is using the last parameters provided via @ref pm_sec_params_set. This event is always followed by either a @ref PM_EVT_CONN_SEC_SUCCEEDED or a @ref PM_EVT_CONN_SEC_FAILED event. This is an informational event; no action is needed for the procedure to proceed. */
 			NRF_LOG_INFO("PM_EVT_CONN_SEC_START");
 			break;
 		case PM_EVT_CONN_SEC_SUCCEEDED:              /**< @brief A link has been encrypted, either as a result of a call to @ref pm_conn_secure or a result of an action by the peer. The event structure contains more information about the circumstances. This event might contain a peer ID with the value @ref PM_PEER_ID_INVALID, which means that the peer (central) used an address that could not be identified, but it used an encryption key (LTK) that is present in the database. */
 			NRF_LOG_INFO("PM_EVT_CONN_SEC_SUCCEEDED");
-			ly_ble_db_discovery_start(p_evt->conn_handle);
+			//ly_ble_db_discovery_start(p_evt->conn_handle);
 			break;
 		case PM_EVT_CONN_SEC_FAILED:                 /**< @brief A pairing or encryption procedure has failed. In some cases, this means that security is not possible on this link (temporarily or permanently). How to handle this error depends on the application. */
 			NRF_LOG_INFO("PM_EVT_CONN_SEC_FAILED");
@@ -241,9 +204,9 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 			{
 				pm_conn_sec_config_t conn_sec_config = {.allow_repairing = true};
 				pm_conn_sec_config_reply(p_evt->conn_handle, &conn_sec_config);
+				//How to reject paring request
+		    	//sd_ble_gap_sec_params_reply() 
 			}
-			//How to reject paring request
-		    //sd_ble_gap_sec_params_reply() 
 			break;
 		case PM_EVT_CONN_SEC_PARAMS_REQ:             /**< @brief Security parameters (@ref ble_gap_sec_params_t) are needed for an ongoing security procedure. Reply with @ref pm_conn_sec_params_reply before the event handler returns. If no reply is sent, the parameters given in @ref pm_sec_params_set are used. If a peripheral connection, the central's sec_params will be available in the event. */
 			NRF_LOG_INFO("PM_EVT_CONN_SEC_PARAMS_REQ");
@@ -262,14 +225,13 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 			break;
 		case PM_EVT_PEER_DELETE_SUCCEEDED:           /**< @brief A peer was cleared from flash storage, for example because a call to @ref pm_peer_delete succeeded. This event can also be sent as part of a call to @ref pm_peers_delete or internal cleanup. */
 			NRF_LOG_INFO("PM_EVT_PEER_DELETE_SUCCEEDED");
-			//adv_scan_start();
-            adv_start(NULL);
 			break;
 		case PM_EVT_PEER_DELETE_FAILED:              /**< @brief A peer could not be cleared from flash storage. This event is sent instead of @ref PM_EVT_PEER_DELETE_SUCCEEDED for the failed operation. */
 			NRF_LOG_INFO("PM_EVT_PEER_DELETE_FAILED");
 			break;
 		case PM_EVT_PEERS_DELETE_SUCCEEDED:          /**< @brief A call to @ref pm_peers_delete has completed successfully. Flash storage now contains no peer data. */
 			NRF_LOG_INFO("PM_EVT_PEERS_DELETE_SUCCEEDED");
+			adv_start(false);
 			break;
 		case PM_EVT_PEERS_DELETE_FAILED:             /**< @brief A call to @ref pm_peers_delete has failed, which means that at least one of the peers could not be deleted. Other peers might have been deleted, or might still be queued to be deleted. No more @ref PM_EVT_PEERS_DELETE_SUCCEEDED or @ref PM_EVT_PEERS_DELETE_FAILED events are sent until the next time @ref pm_peers_delete is called. */
 			NRF_LOG_INFO("PM_EVT_PEERS_DELETE_FAILED");
@@ -341,9 +303,42 @@ static void gatt_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+/*
+<info> app: ly_ble_db_discovery_start
+
+<info> app: addr of m_db_discovery[2]:0x200065C0
+
+<info> app: sizeof(m_db_discovery[conn_handle]):716
+
+<info> ble_db_disc: 02 addr of m_initialized = 0x2000669C
+
+<info> ble_db_disc: ble_db_discovery_start,m_initialized:1
+
+<info> ble_db_disc: m_num_of_handlers_reg:2
+
+<info> app: sys_tick:37
+
+<info> ble_db_disc: 01 addr of m_initialized = 0x2000669C
+
+<info> ble_db_disc: m_initialized = 1, m_num_of_handlers_reg = 2
+
+<info> app: sys_tick:38
+
+<info> ble_db_disc: 01 addr of m_initialized = 0x2000669C
+
+Ê¹ÓÃmemsetÊ±ÒªÌØ±ð×¢Òâ£¬ÕâÀï³öÏÖÁËÄÚ´æ¸²¸ÇµÄÎÊÌâ£¡£¡£¡
+ÕâÀïÊÇÊý×éÔ½½çÁË£¬Ê¹ÓÃÊý×éºÍmemsetÊ±ÒªÌØ±ð×¢Òâ£¡£¡£¡
+ÕâÁ½Ìì¶¼ÊÇÔÚ½â¾öÕâ¸ö¶ÑÕ»Òç³öµÄÎÊÌâ£¬ÊÇ¸öÉî¿ÌµÄ½ÌÑµ£¬ÔÚ´¦ÀíÊý×éÊ±£¬Ò»¶¨ÒªÌØ±ð×¢ÒâÏÂ±ê²»ÒªÔ½½ç£¡£¡£¡2020-07-16
+*/
+
 void ly_ble_db_discovery_start(uint16_t conn_handle)
 {
+	NRF_LOG_INFO("NRF_SDH_BLE_TOTAL_LINK_COUNT:%d", NRF_SDH_BLE_TOTAL_LINK_COUNT);
+	NRF_LOG_INFO("ly_ble_db_discovery_start");
+	#if 1
 	uint32_t err_code;
+	NRF_LOG_INFO("addr of m_db_discovery[%d]:0x%08x", conn_handle, &m_db_discovery[conn_handle]);
+	NRF_LOG_INFO("sizeof(m_db_discovery[%d]):%d", conn_handle, sizeof(m_db_discovery[conn_handle]));
 	memset(&m_db_discovery[conn_handle], 0, sizeof(m_db_discovery[conn_handle]));
 	err_code = ble_db_discovery_start(&m_db_discovery[conn_handle],
 											  conn_handle);
@@ -352,6 +347,7 @@ void ly_ble_db_discovery_start(uint16_t conn_handle)
 	{
 		APP_ERROR_CHECK(err_code);
 	}
+	#endif
 }
 
 void ly_ble_init(void)

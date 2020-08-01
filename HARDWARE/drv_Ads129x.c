@@ -1,3 +1,4 @@
+#if 0
 #include "drv_Ads129x.h"
 #include "nrf_drv_spi.h"
 #include "nrf_drv_gpiote.h"
@@ -1219,4 +1220,5 @@ void vProcess_ADS1x9x_Data(void)
     }
     nrf_delay_ms(2000);
 }
+#endif
 

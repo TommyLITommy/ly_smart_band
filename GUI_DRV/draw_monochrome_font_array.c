@@ -1,4 +1,4 @@
-#include "hardware.h"
+#include "sys_info.h"
 
 void draw_monochrome_font_array(uint16_t top_left_corner_x, uint16_t top_left_corner_y, uint16_t font_array_row, uint16_t font_array_column, uint16_t font_actual_row, uint16_t font_actual_column, uint8_t *p_buffer, uint16_t color)
 {
@@ -15,7 +15,7 @@ void draw_monochrome_font_array(uint16_t top_left_corner_x, uint16_t top_left_co
 			{
 				if(temp & 0x01)
 				{
-					hardware.hal_lcd.lcd_draw_pixel(top_left_corner_x + j,  top_left_corner_y + 8 * i + m, color);
+					sys_info.hardware.drv_lcd.drv_lcd_draw_point(top_left_corner_x + j,  top_left_corner_y + 8 * i + m, color);
 				}
                 
                 temp = temp >> 1;

@@ -7,7 +7,7 @@
 
 #include "SEGGER_RTT.h"
 
-#include "user_log.h"
+#include "ly_log.h"
 
 void log_info(char *fmt, ...)
 {

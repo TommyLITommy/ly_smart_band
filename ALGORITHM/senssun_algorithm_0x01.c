@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <string.h>
-#include "log_print.h"
 #include "acceleration_data_handle_temp.h"
 #include "senssun_algorithm_0x01.h"
 

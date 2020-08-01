@@ -1,8 +1,7 @@
 #include "hardware.h"
 
-hardware_t hardware;
-
-void hardware_init(void)
+void hardware_init(hardware_t *p_hardware)
 {
-	hal_lcd_init(&hardware.hal_lcd);
+	drv_lcd_init(&p_hardware->drv_lcd);
+	drv_uart_init(&p_hardware->drv_uart);
 }

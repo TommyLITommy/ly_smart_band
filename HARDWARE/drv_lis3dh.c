@@ -1,3 +1,4 @@
+#if 0
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -5,7 +6,10 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_delay.h"
+#include "lis3dh_driver.h"
 #include "drv_lis3dh.h"
+#include "ly_log.h"
+#include "calendar.h"
 
 #define G_SENSOR_MOSI_PIN_NUMBER  	26
 #define G_SENSOR_CS_PIN_NUMBER	    28
@@ -79,7 +83,7 @@ void lis3dh_handle_fifo_data(void)
 
 			wrist_list_count++;
 
-			USER_LOG_INFO("wrist_list_count = %d\r\n", wrist_list_count);
+			LY_LOG_INFO("wrist_list_count = %d\r\n", wrist_list_count);
 		}
 		//2.send g sensor raw data to collector through ble or uart!!!
 	}
@@ -91,7 +95,7 @@ void lis3dh_read_fifo_data()
 	uint8_t fss;
 	uint8_t ovrun;
 
-	LIS3DH_GetFifoSourceBit(LIS3DH_FIFO_SRC_OVRUN, ovrun);
+	LIS3DH_GetFifoSourceBit(LIS3DH_FIFO_SRC_OVRUN, &ovrun);
 	LIS3DH_GetFifoSourceFSS(&fss);
 
 	if(MEMS_SET == ovrun)
@@ -101,7 +105,7 @@ void lis3dh_read_fifo_data()
 	
 	fss = (fss >> 2) << 2;
 	
-	//USER_LOG_INFO("u8Ovrun = %d, u8Fss = %d\r\n", u8Ovrun, u8Fss);
+	//LY_LOG_INFO("u8Ovrun = %d, u8Fss = %d\r\n", u8Ovrun, u8Fss);
 	for(index = 0; index < fss; index++)
 	{
 		 LIS3DH_GetAccAxesRaw(lis3dh_axes_raw_data_buffer + index);  
@@ -116,31 +120,31 @@ void lis3dh_register_check(void)
 {
 	uint8_t u8RegisterValue;
 	u8RegisterValue = SPI_Mems_Read_Reg(0x20);
-	USER_LOG_INFO("0x20 = 0x%02x\r\n", u8RegisterValue);
+	LY_LOG_INFO("0x20 = 0x%02x\r\n", u8RegisterValue);
 
 	u8RegisterValue = SPI_Mems_Read_Reg(0x22);
-	USER_LOG_INFO("0x22 = 0x%02x\r\n", u8RegisterValue);
+	LY_LOG_INFO("0x22 = 0x%02x\r\n", u8RegisterValue);
 
 	u8RegisterValue = SPI_Mems_Read_Reg(0x23);
-	USER_LOG_INFO("0x23 = 0x%02x\r\n", u8RegisterValue);
+	LY_LOG_INFO("0x23 = 0x%02x\r\n", u8RegisterValue);
 
 	u8RegisterValue = SPI_Mems_Read_Reg(0x24);
-	USER_LOG_INFO("0x24 = 0x%02x\r\n", u8RegisterValue);
+	LY_LOG_INFO("0x24 = 0x%02x\r\n", u8RegisterValue);
 
 	u8RegisterValue = SPI_Mems_Read_Reg(0x25);
-	USER_LOG_INFO("0x25 = 0x%02x\r\n", u8RegisterValue);
+	LY_LOG_INFO("0x25 = 0x%02x\r\n", u8RegisterValue);
 
 	u8RegisterValue = SPI_Mems_Read_Reg(0x26);
-	USER_LOG_INFO("0x26 = 0x%02x\r\n", u8RegisterValue);
+	LY_LOG_INFO("0x26 = 0x%02x\r\n", u8RegisterValue);
 
 	u8RegisterValue = SPI_Mems_Read_Reg(0x2E);
-	USER_LOG_INFO("0x2E = 0x%02x\r\n", u8RegisterValue);
+	LY_LOG_INFO("0x2E = 0x%02x\r\n", u8RegisterValue);
 }
 
 
 void lis3dh_reboot_memory_content(void)
 {
-	USER_LOG_INFO("\r\n");
+	LY_LOG_INFO("\r\n");
 	SPI_Mems_Write_Reg(LIS3DH_CTRL_REG5, LIS3DH_BOOT);
 	lis3dh_register_check();
 }
@@ -164,7 +168,8 @@ static void lis3dh_mode_set(uint8_t mode)
 			break;
     	case LIS3DH_OPERATION_MODE_LOW_POWER:
 			break;
-		default:
+		default:
+
 			break;
 	}
 }
@@ -197,3 +202,4 @@ void drv_lis3dh_init(void)
 
 	//Start a timer to read g sensor data!!!	
 }
+#endif

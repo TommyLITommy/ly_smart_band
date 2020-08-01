@@ -1,3 +1,5 @@
+#if 0
+
 /*************************************************************************//**
  * @file
  * @brief Si114x function prototypes, structure and bit definitions   
@@ -315,4 +317,5 @@ void Si114x_ClrRxFifo(void);
 
 #endif // #define SI114X_FUNCTIONS_H
 
+#endif
 	

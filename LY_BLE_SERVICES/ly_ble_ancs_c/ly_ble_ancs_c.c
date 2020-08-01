@@ -201,7 +201,10 @@ E2 80 AC                                         ??
 
 *********************************************************/
 
-BLE_ANCS_C_ARRAY_DEF(m_ancs_c_list, NRF_SDH_BLE_PERIPHERAL_LINK_COUNT);  
+//BLE_ANCS_C_ARRAY_DEF(m_ancs_c_list, NRF_SDH_BLE_PERIPHERAL_LINK_COUNT);  
+//要特别注意这里！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！1
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!需要深入理解Nordic如何对多个link进行调度
+BLE_ANCS_C_ARRAY_DEF(m_ancs_c_list, NRF_SDH_BLE_TOTAL_LINK_COUNT);  
 
 #define ATTR_DATA_SIZE			 	32
 #define ATTR_DATA_SIZE_MESSAGE		BLE_ANCS_ATTR_DATA_MAX
@@ -220,8 +223,8 @@ static uint8_t m_attr_posaction[NRF_SDH_BLE_PERIPHERAL_LINK_COUNT][ATTR_DATA_SIZ
 static uint8_t m_attr_negaction[NRF_SDH_BLE_PERIPHERAL_LINK_COUNT][ATTR_DATA_SIZE];                       /**< Buffer to store attribute data. */
 static uint8_t m_attr_disp_name[NRF_SDH_BLE_PERIPHERAL_LINK_COUNT][ATTR_DATA_SIZE];     
 
-static bool m_ancs_discovered[NRF_SDH_BLE_PERIPHERAL_LINK_COUNT]  = false;                          /**< Bool to keep track of when both ancs and gatts have been disovered. Only then do we want to save the peer data. */
-static bool m_gatts_discovered[NRF_SDH_BLE_PERIPHERAL_LINK_COUNT] = false;                          /**< Bool to keep track of when both ancs and gatts have been disovered. Only then do we want to save the peer data. */
+static bool m_ancs_discovered[NRF_SDH_BLE_PERIPHERAL_LINK_COUNT]  = {false};                          /**< Bool to keep track of when both ancs and gatts have been disovered. Only then do we want to save the peer data. */
+static bool m_gatts_discovered[NRF_SDH_BLE_PERIPHERAL_LINK_COUNT] = {false};                          /**< Bool to keep track of when both ancs and gatts have been disovered. Only then do we want to save the peer data. */
 
 /**@brief String literals for the iOS notification categories. used then printing to UART. */
 static const char * lit_catid[BLE_ANCS_NB_OF_CATEGORY_ID] =
@@ -270,22 +273,22 @@ static const char * lit_appid[BLE_ANCS_NB_OF_APP_ATTR] =
 void perform_positive_action(uint16_t conn_handle)
 {
 	uint32_t ret;
-	NRF_LOG_INFO("Performing Positive Action.\r\n");
+	//NRF_LOG_INFO("Performing Positive Action.\r\n");
     APP_ERROR_CHECK(ret);
 }
 
 void perform_negative_action(uint16_t conn_handle)
 {
 	uint32_t ret;
-	NRF_LOG_INFO("Performing Negative Action.\r\n");
+	//NRF_LOG_INFO("Performing Negative Action.\r\n");
     APP_ERROR_CHECK(ret);
 }
 
 void ancs_c_request_attribute(void * p_event_data, uint16_t event_size)
 {
-	NRF_LOG_INFO("FILE = %s, FUNC = %s, LINE = %d\r\n", (uint32_t)__FILE__, (uint32_t)__FUNCTION__, __LINE__);
+	//NRF_LOG_INFO("FILE = %s, FUNC = %s, LINE = %d\r\n", (uint32_t)__FILE__, (uint32_t)__FUNCTION__, __LINE__);
 	uint16_t conn_handle;
-	conn_handle = (uint16_t)p_event_data;
+	conn_handle = (uint16_t)(*((uint32_t*)p_event_data));//Tommy Debug, Need modify
 	nrf_ble_ancs_c_request_attrs(&m_ancs_c_list[conn_handle], &m_notification_latest[conn_handle]);
 }
 
@@ -298,7 +301,7 @@ void apple_notification_setup(ble_ancs_c_t             * p_ancs)
 {
     ret_code_t ret;
 
-	NRF_LOG_INFO("-----------------apple_notification_setup\r\n");
+	//NRF_LOG_INFO("-----------------apple_notification_setup\r\n");
 
 	//Need modify when using rtos!
     nrf_delay_ms(100); // Delay because we cannot add a CCCD to close to starting encryption. iOS specific.
@@ -309,7 +312,7 @@ void apple_notification_setup(ble_ancs_c_t             * p_ancs)
     ret = ble_ancs_c_data_source_notif_enable(p_ancs);
     APP_ERROR_CHECK(ret);
 
-    NRF_LOG_DEBUG("Notifications Enabled.\r\n");
+    //NRF_LOG_DEBUG("Notifications Enabled.\r\n");
 }
 
 /**@brief Function for printing an iOS notification.
@@ -318,32 +321,32 @@ void apple_notification_setup(ble_ancs_c_t             * p_ancs)
  */
 void notif_print(ble_ancs_c_evt_notif_t * p_notif)
 {
-    NRF_LOG_INFO("\r\nNotification\r\n");
-    NRF_LOG_INFO("Event:       %s\r\n", (uint32_t)lit_eventid[p_notif->evt_id]);
-    NRF_LOG_INFO("Category ID: %s\r\n", (uint32_t)lit_catid[p_notif->category_id]);
-	NRF_LOG_INFO("Category Cnt:%u\r\n", (unsigned int) p_notif->category_count);
-    NRF_LOG_INFO("UID:         %u\r\n", (unsigned int) p_notif->notif_uid);
+    //NRF_LOG_INFO("\r\nNotification\r\n");
+    //NRF_LOG_INFO("Event:       %s\r\n", (uint32_t)lit_eventid[p_notif->evt_id]);
+    //NRF_LOG_INFO("Category ID: %s\r\n", (uint32_t)lit_catid[p_notif->category_id]);
+	//NRF_LOG_INFO("Category Cnt:%u\r\n", (unsigned int) p_notif->category_count);
+    //NRF_LOG_INFO("UID:         %u\r\n", (unsigned int) p_notif->notif_uid);
 
-    NRF_LOG_INFO("Flags:\r\n");
+    //NRF_LOG_INFO("Flags:\r\n");
     if(p_notif->evt_flags.silent == 1)
     {
-        NRF_LOG_INFO(" Silent\r\n");
+        //NRF_LOG_INFO(" Silent\r\n");
     }
     if(p_notif->evt_flags.important == 1)
     {
-        NRF_LOG_INFO(" Important\r\n");
+        //NRF_LOG_INFO(" Important\r\n");
     }
     if(p_notif->evt_flags.pre_existing == 1)
     {
-        NRF_LOG_INFO(" Pre-existing\r\n");
+        //NRF_LOG_INFO(" Pre-existing\r\n");
     }
     if(p_notif->evt_flags.positive_action == 1)
     {
-        NRF_LOG_INFO(" Positive Action\r\n");
+        //NRF_LOG_INFO(" Positive Action\r\n");
     }
     if(p_notif->evt_flags.negative_action == 1)
     {
-        NRF_LOG_INFO(" Negative Action\r\n");
+        //NRF_LOG_INFO(" Negative Action\r\n");
     }
 }
 
@@ -356,15 +359,15 @@ static void notif_attr_print(ble_ancs_c_attr_t * p_attr)
 	uint8_t match = false;
 	push_notification_type_t push_notification_type;
 
-	NRF_LOG_INFO("attr_id = %d\r\n", p_attr->attr_id);
+	//NRF_LOG_INFO("attr_id = %d\r\n", p_attr->attr_id);
 	
     if (p_attr->attr_len != 0)
     {
-        NRF_LOG_INFO("%s: %s\r\n", (uint32_t)lit_attrid[p_attr->attr_id], nrf_log_push((char *)p_attr->p_attr_data));
+        //NRF_LOG_INFO("%s: %s\r\n", (uint32_t)lit_attrid[p_attr->attr_id], nrf_log_push((char *)p_attr->p_attr_data));
     }
     else if (p_attr->attr_len == 0)
     {
-        NRF_LOG_INFO("%s: (N/A)\r\n", (uint32_t)lit_attrid[p_attr->attr_id]);
+        //NRF_LOG_INFO("%s: (N/A)\r\n", (uint32_t)lit_attrid[p_attr->attr_id]);
     }
 
 	switch(p_attr->attr_id)
@@ -399,11 +402,11 @@ static void app_attr_print(ble_ancs_c_attr_t * p_attr)
 {
     if (p_attr->attr_len != 0)
     {
-        NRF_LOG_INFO("%s: %s\r\n", (uint32_t)lit_appid[p_attr->attr_id], (uint32_t)p_attr->p_attr_data);
+        //NRF_LOG_INFO("%s: %s\r\n", (uint32_t)lit_appid[p_attr->attr_id], (uint32_t)p_attr->p_attr_data);
     }
     else if (p_attr->attr_len == 0)
     {
-        NRF_LOG_INFO("%s: (N/A)\r\n", (uint32_t) lit_appid[p_attr->attr_id]);
+        //NRF_LOG_INFO("%s: (N/A)\r\n", (uint32_t) lit_appid[p_attr->attr_id]);
     }
 }
 
@@ -416,19 +419,19 @@ static void err_code_print(uint16_t err_code_np)
     switch (err_code_np)
     {
         case BLE_ANCS_NP_UNKNOWN_COMMAND:
-            NRF_LOG_INFO("Error: Command ID was not recognized by the Notification Provider. \r\n");
+            //NRF_LOG_INFO("Error: Command ID was not recognized by the Notification Provider. \r\n");
             break;
 
         case BLE_ANCS_NP_INVALID_COMMAND:
-            NRF_LOG_INFO("Error: Command failed to be parsed on the Notification Provider. \r\n");
+            //NRF_LOG_INFO("Error: Command failed to be parsed on the Notification Provider. \r\n");
             break;
 
         case BLE_ANCS_NP_INVALID_PARAMETER:
-            NRF_LOG_INFO("Error: Parameter does not refer to an existing object on the Notification Provider. \r\n");
+            //NRF_LOG_INFO("Error: Parameter does not refer to an existing object on the Notification Provider. \r\n");
             break;
 
         case BLE_ANCS_NP_ACTION_FAILED:
-            NRF_LOG_INFO("Error: Perform Notification Action Failed on the Notification Provider. \r\n");
+            //NRF_LOG_INFO("Error: Perform Notification Action Failed on the Notification Provider. \r\n");
             break;
 
         default:
@@ -529,6 +532,7 @@ static void ancs_c_evt_handler(ble_ancs_c_evt_t * p_evt)
 
 void ly_ble_ancs_c_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
+	//感觉还是数据越界产生的问题，conn_handle和m_ancs_c_list数据大小不匹配，不能直接这样用吧！！！
 	ble_ancs_c_on_db_disc_evt(&m_ancs_c_list[p_evt->conn_handle], p_evt);
 }
 
@@ -536,8 +540,9 @@ void ly_ble_ancs_c_init(void)
 {
 	ble_ancs_c_init_t ancs_c_init;
 	uint32_t ret;
-
-	for(uint8_t i = 0; i < NRF_SDH_BLE_PERIPHERAL_LINK_COUNT; i++)
+	
+	//for(uint8_t i = 0; i < NRF_SDH_BLE_PERIPHERAL_LINK_COUNT; i++)
+	for(uint8_t i = 0; i < NRF_SDH_BLE_TOTAL_LINK_COUNT; i++)
 	{
 		// Init the Apple Notification Center Service client module.
     	memset(&ancs_c_init, 0, sizeof(ancs_c_init));

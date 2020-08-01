@@ -155,6 +155,7 @@ void ui_task(void *param)
 				break;
 		}
 		#endif
+		vTaskDelay(100);
 	}
 }
 

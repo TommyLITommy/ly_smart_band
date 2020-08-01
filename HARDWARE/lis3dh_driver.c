@@ -1,3 +1,4 @@
+#if 0
 /******************** (C) COPYRIGHT 2012 STMicroelectronics ********************
 * File Name          : LIS3DH_driver.c
 * Author             : MSH Application Team
@@ -1658,3 +1659,4 @@ status_t LIS3DH_SetSPIInterface(LIS3DH_SPIMode_t spi) {
   return MEMS_SUCCESS;
 }
 /******************* (C) COPYRIGHT 2012 STMicroelectronics *****END OF FILE****/
+#endif

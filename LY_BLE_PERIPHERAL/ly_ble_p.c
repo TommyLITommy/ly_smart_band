@@ -12,7 +12,6 @@
 #include "ble_hrs.h"
 #include "ble_dis.h"
 #include "ble_conn_params.h"
-#include "sensorsim.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_soc.h"
 #include "nrf_sdh_ble.h"
@@ -42,7 +41,7 @@
 #include "ly_ble_ancs_c.h"
 #include "ly_ble_tus.h"
 
-#define DEVICE_NAME                         "LY001"                            /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                         "LYSB"                            /**< Name of device. Will be included in the advertising data. */
 #define MANUFACTURER_NAME                   "LY"                   /**< Manufacturer. Will be passed to Device Information Service. */
 
 #define APP_ADV_INTERVAL                    300                                     /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
@@ -59,11 +58,12 @@
 
 BLE_TUS_DEF(m_tus, NRF_SDH_BLE_PERIPHERAL_LINK_COUNT);
 BLE_ADVERTISING_DEF(m_advertising);                        						    /**< Advertising module instance. */
-NRF_BLE_QWRS_DEF(m_qwr, NRF_SDH_BLE_TOTAL_LINK_COUNT);                           /**< Context for the Queued Write module.*/
 
 static uint8_t m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET;                   /**< Advertising handle used to identify an advertising set. */
 static uint8_t m_enc_advdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];                    /**< Buffer for storing an encoded advertising set. */
 static uint8_t m_enc_scan_response_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX];         /**< Buffer for storing an encoded scan data. */
+
+uint16_t latest_conn_handle = BLE_CONN_HANDLE_INVALID;
 
 #if 1
 /**@brief Struct that contains pointers to the encoded advertising data. */
@@ -190,20 +190,41 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     }
 }
 
+static void delete_bonds(void)
+{
+    ret_code_t err_code;
+
+    NRF_LOG_INFO("Erase bonds!");
+
+    err_code = pm_peers_delete();
+    APP_ERROR_CHECK(err_code);
+}
+
+
 //Tommy Debug, There should have a mechanical when there is no peripheral connection it should start adv!!!
 
 /**@brief Function for initializing the advertising and the scanning.
  */
 #if 1
-void adv_start(void *p_context)
+//void adv_start(bool erase_bonds)
+void adv_start(void * p_context)
 {
+	bool erase_bonds = false;
 	ret_code_t err_code;
 
-    err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
+	if (erase_bonds == true)
+    {
+        delete_bonds();// Advertising is started by PM_EVT_PEERS_DELETE_SUCCEEDED event
+    }
+	else
+	{
+	    err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
 
-    APP_ERROR_CHECK(err_code);
+	    APP_ERROR_CHECK(err_code);
 
-	NRF_LOG_INFO("Start Adv");
+		NRF_LOG_INFO("Start Adv");
+	}
+
 }
 #else//What's the difference between those two functions?
 void adv_start(void * p_context)
@@ -292,33 +313,14 @@ static void advertising_init(void)
 }
 #endif
 
-/**@brief Function for handling Queued Write module errors.
- *
- * @details A pointer to this function is passed to each service that may need to inform the
- *          application about an error.
- *
- * @param[in]   nrf_error   Error code that contains information about what went wrong.
- */
-static void nrf_qwr_error_handler(uint32_t nrf_error)
-{
-    APP_ERROR_HANDLER(nrf_error);
-}
-
 static void ble_tus_data_handler(ble_tus_evt_t * p_evt)
 {
 	switch(p_evt->type)
 	{
 		case BLE_TUS_EVT_RX_DATA:
 			NRF_LOG_INFO("Remote 0x%x Send Data:", p_evt->conn_handle);
-			NRF_LOG_HEXDUMP_INFO(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
-
-			ly_ble_p_protocol_handler(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
-
-			#if 0
-			uint32_t err_code;
-			err_code = ble_tus_data_send(p_evt->p_tus, (uint8_t*)p_evt->params.rx_data.p_data, &p_evt->params.rx_data.length, p_evt->conn_handle);
-			APP_ERROR_CHECK(err_code);
-			#endif
+			//NRF_LOG_HEXDUMP_INFO(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
+			ly_ble_p_protocol_handler(p_evt->conn_handle, p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
 			break;
 		default:
 			break;
@@ -333,16 +335,6 @@ static void services_init(void)
 {
     ret_code_t         err_code;
     ble_tus_init_t     tus_init;
-    nrf_ble_qwr_init_t qwr_init = {0};
-
-    // Initialize Queued Write module instances.
-    qwr_init.error_handler = nrf_qwr_error_handler;
-
-    for (uint32_t i = 0; i < NRF_SDH_BLE_TOTAL_LINK_COUNT; i++)
-    {
-        err_code = nrf_ble_qwr_init(&m_qwr[i], &qwr_init);
-        APP_ERROR_CHECK(err_code);
-    }
 
     memset(&tus_init, 0, sizeof(tus_init));
 
@@ -363,16 +355,7 @@ static void on_connected(const ble_gap_evt_t * const p_gap_evt)
 
 	NRF_LOG_INFO("Connection with link 0x%x establised.", p_gap_evt->conn_handle);
 
-	// Assign connection handle to available instance of QWR module.
-	for(uint32_t i = 0; i < NRF_SDH_BLE_PERIPHERAL_LINK_COUNT; i++)
-	{
-		if(m_qwr[i].conn_handle == BLE_CONN_HANDLE_INVALID)
-		{
-			err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr[i], p_gap_evt->conn_handle);
-			APP_ERROR_CHECK(err_code);
-			break;
-		}
-	}
+	latest_conn_handle = p_gap_evt->conn_handle;
 
 	if(periph_link_cnt == NRF_SDH_BLE_PERIPHERAL_LINK_COUNT)
 	{
@@ -401,7 +384,14 @@ static void on_disconnect(ble_gap_evt_t const * const p_gap_evt)
 	{
 		advertising_start();
 	}
+
+	if(latest_conn_handle == p_gap_evt->conn_handle)
+	{
+		latest_conn_handle = BLE_CONN_HANDLE_INVALID;
+	}
 }
+
+//evt_id=0x57-->BLE_GATTS_EVT_HVN_TX_COMPLETE
 
 /**@brief   Function for handling BLE events from peripheral applications.
  * @details Updates the status LEDs used to report the activity of the peripheral applications.
@@ -413,23 +403,23 @@ static void on_ble_peripheral_evt(ble_evt_t const * p_ble_evt)
     ret_code_t            err_code;
     //ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;
 
-	NRF_LOG_INFO("on_ble_peripheral_evt:%d", p_ble_evt->header.evt_id);
+	NRF_LOG_INFO("on_ble_peripheral_evt:0x%x", p_ble_evt->header.evt_id);
 
     switch (p_ble_evt->header.evt_id)
     {
 		case BLE_GAP_EVT_CONNECTED:
-			NRF_LOG_INFO("BLE_GAP_EVT_CONNECTED");
+			//NRF_LOG_INFO("BLE_GAP_EVT_CONNECTED");
 			on_connected(&p_ble_evt->evt.gap_evt);
 			break;
   		case BLE_GAP_EVT_DISCONNECTED:
-			NRF_LOG_INFO("BLE_GAP_EVT_DISCONNECTED");
+			//NRF_LOG_INFO("BLE_GAP_EVT_DISCONNECTED");
 			on_disconnect(&p_ble_evt->evt.gap_evt);
 			break;
   		case BLE_GAP_EVT_CONN_PARAM_UPDATE:
-			NRF_LOG_INFO("BLE_GAP_EVT_CONN_PARAM_UPDATE");
+			//NRF_LOG_INFO("BLE_GAP_EVT_CONN_PARAM_UPDATE");
 			break;
   		case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_SEC_PARAMS_REQUEST");
+			//NRF_LOG_INFO("BLE_GAP_EVT_SEC_PARAMS_REQUEST");
 			// Pairing not supported, Why does it not support paring?
 			// If i want to feedback sec params, what should i do?
 			#if 0
@@ -441,100 +431,103 @@ static void on_ble_peripheral_evt(ble_evt_t const * p_ble_evt)
 			#endif
 			break;
   		case BLE_GAP_EVT_SEC_INFO_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_SEC_INFO_REQUEST");
+			//NRF_LOG_INFO("BLE_GAP_EVT_SEC_INFO_REQUEST");
 			break;
   		case BLE_GAP_EVT_PASSKEY_DISPLAY:
-			NRF_LOG_INFO("BLE_GAP_EVT_PASSKEY_DISPLAY");
+			//NRF_LOG_INFO("BLE_GAP_EVT_PASSKEY_DISPLAY");
 			break;
   		case BLE_GAP_EVT_KEY_PRESSED:
-			NRF_LOG_INFO("BLE_GAP_EVT_KEY_PRESSED");
+			//NRF_LOG_INFO("BLE_GAP_EVT_KEY_PRESSED");
 			break;
   		case BLE_GAP_EVT_AUTH_KEY_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_AUTH_KEY_REQUEST");
+			//NRF_LOG_INFO("BLE_GAP_EVT_AUTH_KEY_REQUEST");
 			break;
   		case BLE_GAP_EVT_LESC_DHKEY_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_LESC_DHKEY_REQUEST");
+			//NRF_LOG_INFO("BLE_GAP_EVT_LESC_DHKEY_REQUEST");
 			break;
   		case BLE_GAP_EVT_AUTH_STATUS:
-			NRF_LOG_INFO("BLE_GAP_EVT_AUTH_STATUS");
+			//NRF_LOG_INFO("BLE_GAP_EVT_AUTH_STATUS");
 			break;
   		case BLE_GAP_EVT_CONN_SEC_UPDATE:
-			NRF_LOG_INFO("BLE_GAP_EVT_CONN_SEC_UPDATE");
+			//NRF_LOG_INFO("BLE_GAP_EVT_CONN_SEC_UPDATE");
 			break;
   		case BLE_GAP_EVT_TIMEOUT:
-			NRF_LOG_INFO("BLE_GAP_EVT_TIMEOUT");
+			//NRF_LOG_INFO("BLE_GAP_EVT_TIMEOUT");
 			break;
   		case BLE_GAP_EVT_RSSI_CHANGED:
-			NRF_LOG_INFO("BLE_GAP_EVT_RSSI_CHANGED");
+			//NRF_LOG_INFO("BLE_GAP_EVT_RSSI_CHANGED");
 			break;
   		case BLE_GAP_EVT_ADV_REPORT:
-			NRF_LOG_INFO("BLE_GAP_EVT_ADV_REPORT");
+			//NRF_LOG_INFO("BLE_GAP_EVT_ADV_REPORT");
 			break;
   		case BLE_GAP_EVT_SEC_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_SEC_REQUEST");
+			//NRF_LOG_INFO("BLE_GAP_EVT_SEC_REQUEST");
 			break;
   		case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST");
+			//NRF_LOG_INFO("BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST");
 			break;
   		case BLE_GAP_EVT_SCAN_REQ_REPORT:
-			NRF_LOG_INFO("BLE_GAP_EVT_SCAN_REQ_REPORT");
+			//NRF_LOG_INFO("BLE_GAP_EVT_SCAN_REQ_REPORT");
 			break;
   		case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_PHY_UPDATE_REQUEST");
-            ble_gap_phys_t const phys =
+			//NRF_LOG_INFO("BLE_GAP_EVT_PHY_UPDATE_REQUEST");
             {
-                .rx_phys = BLE_GAP_PHY_AUTO,
-                .tx_phys = BLE_GAP_PHY_AUTO,
-            };
-            err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
-            APP_ERROR_CHECK(err_code);
+                ble_gap_phys_t const phys =
+                {
+                    .rx_phys = BLE_GAP_PHY_AUTO,
+                    .tx_phys = BLE_GAP_PHY_AUTO,
+                };
+                
+                err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
+                APP_ERROR_CHECK(err_code);
+            }
 			break;
   		case BLE_GAP_EVT_PHY_UPDATE:
-			NRF_LOG_INFO("BLE_GAP_EVT_PHY_UPDATE");
+			//NRF_LOG_INFO("BLE_GAP_EVT_PHY_UPDATE");
 			break;
   		case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST:
-			NRF_LOG_INFO("BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST");
+			//NRF_LOG_INFO("BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST");
 			break;
   		case BLE_GAP_EVT_DATA_LENGTH_UPDATE:
-			NRF_LOG_INFO("BLE_GAP_EVT_DATA_LENGTH_UPDATE");
+			//NRF_LOG_INFO("BLE_GAP_EVT_DATA_LENGTH_UPDATE");
 			break;
   		case BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT:
-			NRF_LOG_INFO("BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT");
+			//NRF_LOG_INFO("BLE_GAP_EVT_QOS_CHANNEL_SURVEY_REPORT");
 			break;
   		case BLE_GAP_EVT_ADV_SET_TERMINATED:
-			NRF_LOG_INFO("BLE_GAP_EVT_ADV_SET_TERMINATED");
+			//NRF_LOG_INFO("BLE_GAP_EVT_ADV_SET_TERMINATED");
 			break;
 		//BLE_GATTS_EVT
   		case BLE_GATTS_EVT_WRITE:
-			NRF_LOG_INFO("BLE_GATTS_EVT_WRITE");
+			//NRF_LOG_INFO("BLE_GATTS_EVT_WRITE");
 			break;
   		case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
-			NRF_LOG_INFO("BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST");
+			//NRF_LOG_INFO("BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST");
 			break;
   		case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-			NRF_LOG_INFO("BLE_GATTS_EVT_SYS_ATTR_MISSING");
+			//NRF_LOG_INFO("BLE_GATTS_EVT_SYS_ATTR_MISSING");
 			// No system attributes have been stored.
             err_code = sd_ble_gatts_sys_attr_set(p_ble_evt->evt.gap_evt.conn_handle, NULL, 0, 0);
             APP_ERROR_CHECK(err_code);
 			break;
   		case BLE_GATTS_EVT_HVC:
-			NRF_LOG_INFO("BLE_GATTS_EVT_HVC");
+			//NRF_LOG_INFO("BLE_GATTS_EVT_HVC");
 			break;
   		case BLE_GATTS_EVT_SC_CONFIRM:
-			NRF_LOG_INFO("BLE_GATTS_EVT_SC_CONFIRM");
+			//NRF_LOG_INFO("BLE_GATTS_EVT_SC_CONFIRM");
 			break;
   		case BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST:
-			NRF_LOG_INFO("BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST");
+			//NRF_LOG_INFO("BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST");
 			break;
   		case BLE_GATTS_EVT_TIMEOUT:
 			// Disconnect on GATT Server timeout event.
-            NRF_LOG_DEBUG("GATT Server Timeout.");
+            //NRF_LOG_DEBUG("GATT Server Timeout.");
             err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle,
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
 			break;
   		case BLE_GATTS_EVT_HVN_TX_COMPLETE:
-			NRF_LOG_INFO("BLE_GATTS_EVT_HVN_TX_COMPLETE");
+			//NRF_LOG_INFO("BLE_GATTS_EVT_HVN_TX_COMPLETE");
 			break;
 		default:
 			break;
@@ -544,6 +537,17 @@ static void on_ble_peripheral_evt(ble_evt_t const * p_ble_evt)
 void ly_ble_p_db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {	
 	ly_ble_ancs_c_disc_handler(p_evt);
+}
+
+void ly_ble_p_status_print(void)
+{
+	uint32_t periph_link_cnt = ble_conn_state_peripheral_conn_count();
+	NRF_LOG_INFO("periph_link_cnt:%d", periph_link_cnt);
+}
+
+void ly_ble_p_send_data_to_remote(uint16_t conn_handle, uint8_t *p_data, uint16_t length)
+{
+	ble_tus_data_send(&m_tus, p_data, &length, conn_handle);
 }
 
 void ly_ble_p_init(ly_ble_p_t *p_ly_ble_p)

@@ -12,6 +12,7 @@ typedef struct
 extern void ly_ble_c_db_disc_handler(ble_db_discovery_evt_t * p_evt);
 extern void scan_start(void);
 extern void scan_stop(void);
+extern void ly_ble_c_status_print(void);
 extern void ly_ble_c_init(ly_ble_c_t *p_ly_ble_c);
 
 #endif

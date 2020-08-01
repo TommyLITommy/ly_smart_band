@@ -5,3 +5,4 @@
 #define TOUCH_KEY_POWER_SUPPLY_PIN_NUMBER    		10
 
 #endif
+

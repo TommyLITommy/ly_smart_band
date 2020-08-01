@@ -34,10 +34,15 @@
 #include "ly_ble_p.h"
 #include "ly_ble_c.h"
 
+#include "sys_malloc.h"
+#include "sys_queue.h"
+#include "sys_info.h"
+
 #define SYSTEM_TIMER_INTERVAL         				1000  
-#define BATTERY_LEVEL_MEAS_INTERVAL					1000
-#define HEART_RATE_MEAS_INTERVAL					1000
-#define STEP_COUNT_INTERVAL							1000
+#define BATTERY_LEVEL_MEAS_INTERVAL					100
+#define HEART_RATE_MEAS_INTERVAL					100
+#define STEP_COUNT_INTERVAL							100
+#define MEMS_RAW_DATA_MEAS_INTERVAL			        200
 
 #define OSTIMER_WAIT_FOR_QUEUE              		2                                       /**< Number of ticks to wait for the timer queue to be ready */
 
@@ -51,6 +56,7 @@ static TimerHandle_t m_system_timer;
 static TimerHandle_t m_battery_timer;
 static TimerHandle_t m_heart_rate_timer;
 static TimerHandle_t m_step_timer;
+static TimerHandle_t m_mems_raw_data_meas_timer;
 
 static uint32_t system_time;
 static uint32_t system_running_time;
@@ -81,8 +87,9 @@ static void logger_thread(void * arg)
     }
 }
 
+//Tommy Debug, Very Important!!!!!!
 //If the task never active release cpu resource, the idle hook will never be called!!!
-
+//特别注意，如果没有system log打印，可能的原因是某个task没有释放cpu使用权，一直占着，这样导致logger task永远不会执行！！！
 void vApplicationIdleHook( void )
 {
     vTaskResume(m_logger_thread);
@@ -110,7 +117,6 @@ static void system_timer_timeout_handler(TimerHandle_t xTimer)
 
 	#if 1
     //set_show_ui(i);
-	
 	i = (i + 1);
 
 	if(i == (uint8_t)UI_MAX)
@@ -131,13 +137,18 @@ static void battery_timer_timeout_handler(TimerHandle_t xTimer)
 static void heart_rate_timer_timeout_handler(TimerHandle_t xTimer)
 {
 	system_running_time++;
-	//draw_clock();
-	//ui_charging_change();
 }
 
 static void step_timer_timeout_handler(TimerHandle_t xTimer)
 {
 	system_running_time++;
+}
+
+uint8_t buffer[200] = {0x11, 0x22, 0x33};
+static void mems_raw_data_meas_timeout_handler(TimerHandle_t xTimer)
+{
+	NRF_LOG_INFO("mems measure");
+	ly_ble_p_send_data_to_remote(latest_conn_handle, buffer, sizeof(buffer));
 }
 
 static void application_timers_start(void)
@@ -158,6 +169,11 @@ static void application_timers_start(void)
 	}
 
 	if(pdPASS != xTimerStart(m_step_timer, OSTIMER_WAIT_FOR_QUEUE))
+	{
+		APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
+	}
+	
+	if(pdPASS != xTimerStart(m_mems_raw_data_meas_timer, OSTIMER_WAIT_FOR_QUEUE))
 	{
 		APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
 	}
@@ -193,11 +209,18 @@ static void timers_init(void)
                                 NULL,
 								step_timer_timeout_handler);
 								   
-								   
+
+	m_mems_raw_data_meas_timer = xTimerCreate("MEMS", 
+								MEMS_RAW_DATA_MEAS_INTERVAL,
+								pdTRUE,
+								NULL,
+								mems_raw_data_meas_timeout_handler);
+								
 	if((NULL == m_system_timer) ||
 	   (NULL == m_battery_timer) ||
 	   (NULL == m_heart_rate_timer) ||
-	   (NULL == m_step_timer))
+	   (NULL == m_step_timer) ||
+	   (NULL == m_mems_raw_data_meas_timer))
 	{
 		APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
 	}
@@ -217,30 +240,11 @@ static void adv_scan_start(void * p_context)
     }
 }
 
-#if 0
-int main(void)
-{	
-    log_init();
+void uart_rx_command_handler(uint8_t *p_data, uint16_t length)
+{
 	
-    clock_init();
-
-	timers_init();
-	
-	hardware_init();
-
-	ly_ble_init();
-
-	adv_start(NULL);
-	
-	while(1)
-	{
-		NRF_LOG_FLUSH();
-		nrf_delay_ms(1000);
-		NRF_LOG_INFO("system_running_time:%d", system_running_time++);
-	}
 }
 
-#else
 int main(void)
 {	
     log_init();
@@ -250,7 +254,7 @@ int main(void)
 	timers_init();
 
     // Start execution.
-    if (pdPASS != xTaskCreate(logger_thread, "LOGGER", 256, NULL, 1, &m_logger_thread))
+    if (pdPASS != xTaskCreate(logger_thread, "LOGGER", 512, NULL, 1, &m_logger_thread))
     {
         APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
     }
@@ -258,37 +262,37 @@ int main(void)
 	// Activate deep sleep mode.
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
-	#if 1
-	hardware_init();
-
-	ui_init();
-
-	//{65,35,110,170},
-	//extern const unsigned char icon_charging_01[];
-	//hardware.hal_lcd.lcd_draw_picture(65,35,110,170,icon_charging_01);
-	//ui_enter(UI_NOTIFICATION);
-    //ui_task(NULL);
+	//#ifdef NRF52832_XXAA
+    #if 1
+	sys_malloc_init(&sys_info);
+	sys_queue_init(&sys_info.rx_queue);
     
+    sys_info_init(&sys_info);
+    sys_info.hardware.drv_uart.drv_uart_rx_command_handler = uart_rx_command_handler;
+	#endif
+
+	#if 1
+	ui_init();
 	//xTaskCreate(start_task, "START_TASK", 300, NULL, 2, &start_task_handle);
 	xTaskCreate(ui_task, "ui_task", 300, NULL, 1, &ui_task_handle);
 	#endif
 
-	#if 0
+	#if 1
 	ly_ble_init();
 
 	nrf_sdh_freertos_init(adv_scan_start, NULL);
 
-	NRF_LOG_INFO("Tommy FreeRTOS example started.");
+	NRF_LOG_INFO("FreeRTOS Start, Free Heap:%d bytes\r\n", xPortGetFreeHeapSize());
 	#endif
+	
 	application_timers_start();
 
 	vTaskStartScheduler();
 
-	//It will never reach here!
 	while(1)
 	{
 	
 	}
 }
-#endif
+
 

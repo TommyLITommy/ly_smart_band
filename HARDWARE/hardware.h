@@ -1,16 +1,16 @@
 #ifndef __HAREWARE_H__
 #define __HAREWARE_H__
 
-#include "hal_lcd.h"
+#include "drv_lcd.h"
+#include "drv_uart.h"
 
 typedef struct
 {
-	hal_lcd_t hal_lcd;
+	drv_lcd_t drv_lcd;
+	drv_uart_t drv_uart;
 }hardware_t;
 
-extern hardware_t hardware;;
-
-extern void hardware_init(void);
+extern void hardware_init(hardware_t *p_hardware);
 
 #endif
 

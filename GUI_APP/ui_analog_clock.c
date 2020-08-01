@@ -1,5 +1,5 @@
 #include <math.h>
-#include "hardware.h"
+#include "sys_info.h"
 #include "draw_common.h"
 #include "ui_analog_clock.h"
 
@@ -24,7 +24,7 @@ static void draw_analog_clock_minute_hand(uint16_t origin_x, uint16_t origin_y, 
 	{
 		for(b = 0; b < 5; b++)
 		{
-			hardware.hal_lcd.lcd_draw_line(origin_x + a, origin_y + b, origin_x + a + x, origin_y + b - y, color);
+			sys_info.hardware.drv_lcd.drv_lcd_draw_line(origin_x + a, origin_y + b, origin_x + a + x, origin_y + b - y, color);
 		}
 	}
 }
@@ -40,7 +40,7 @@ static void draw_analog_clock_hour(uint16_t origin_x, uint16_t origin_y, uint8_t
 	{
 		for(b = 0; b < 4; b++)
 		{
-			hardware.hal_lcd.lcd_draw_line(origin_x + a , origin_y + b, origin_x + a + x, origin_y + b - y, color);
+			sys_info.hardware.drv_lcd.drv_lcd_draw_line(origin_x + a , origin_y + b, origin_x + a + x, origin_y + b - y, color);
 		}
 	}
 }

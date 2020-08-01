@@ -1,4 +1,4 @@
-#include "hardware.h"
+#include "sys_info.h"
 #include "draw_digit.h"
 
 extern const unsigned char *icon_time_hour[10];
@@ -28,7 +28,7 @@ void draw_digit(uint16_t top_left_corner_x, uint16_t top_left_corner_y, uint8_t 
 	
 	if(match)
 	{
-		hardware.hal_lcd.lcd_draw_picture(top_left_corner_x, top_left_corner_y, length, width, p_buffer);
+		sys_info.hardware.drv_lcd.drv_lcd_draw_picture(top_left_corner_x, top_left_corner_y, length, width, p_buffer);
 	}	
 }
 

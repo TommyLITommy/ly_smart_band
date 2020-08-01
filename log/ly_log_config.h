@@ -1,0 +1,123 @@
+#ifndef __LY_LOG_CONFIG_H__
+#define __LY_LOG_CONFIG_H__
+
+// <<< Use Configuration Wizard in Context Menu >>>\n
+
+// <e> LY_LOG_ENABLED
+#ifndef LY_LOG_ENABLED
+#define LY_LOG_ENABLED 1
+#endif
+
+#ifdef LY_LOG_ENABLED
+
+// <e> LY_MAIN_ENABLED
+#ifndef LY_LOG_MAIN_ENABLED
+#define LY_LOG_MAIN_ENABLED 1
+#endif
+
+// <q> LY_LOG_BLE_ENABLED
+#ifndef LY_LOG_BLE_ENABLED
+#define LY_LOG_BLE_ENABLED 1
+#endif
+
+// <q> LY_LOG_APP_ENABLED
+#ifndef LY_LOG_APP_ENABLED
+#define LY_LOG_APP_ENABLED 1
+#endif
+
+// <q> LY_LOG_SYS_MALLOC_ENABLED
+#ifndef LY_LOG_SYS_MALLOC_ENABLED
+#define LY_LOG_SYS_MALLOC_ENABLED 1
+#endif
+
+// <q> LY_LOG_WECHAT_ENABLED
+#ifndef LY_LOG_WECHAT_ENABLED
+#define LY_LOG_WECHAT_ENABLED 1
+#endif
+
+// <q> LY_LOG_ANCS_ENABLED
+#ifndef LY_LOG_ANCS_ENABLED
+#define LY_LOG_ANCS_ENABLED 1
+#endif
+
+// <q> LY_LOG_TIME_ENABLED
+#ifndef LY_LOG_TIME_ENABLED
+#define LY_LOG_TIME_ENABLED 1
+#endif
+
+// <q> LY_LOG_RQ_ENABLED
+#ifndef LY_LOG_RQ_ENABLED
+#define LY_LOG_RQ_ENABLED 1
+#endif
+
+// <q> LY_LOG_TIMER_U_ENABLED
+#ifndef LY_LOG_TIMER_U_ENABLED
+#define LY_LOG_TIMER_U_ENABLED 1
+#endif
+
+// <q> LY_LOG_COMMAND_QUEUE_ENABLED
+#ifndef LY_LOG_COMMAND_QUEUE_ENABLED
+#define LY_LOG_COMMAND_QUEUE_ENABLED 1
+#endif
+
+// <q> LY_LOG_HARDWARE_ENABLED
+#ifndef LY_LOG_HARDWARE_ENABLED
+#define LY_LOG_HARDWARE_ENABLED 1
+#endif
+
+// <q> LY_LOG_HARDWARE_TK_ENABLED
+#ifndef LY_LOG_HARDWARE_TK_ENABLED
+#define LY_LOG_HARDWARE_TK_ENABLED 1
+#endif
+
+// <q> LY_LOG_HARDWARE_BATTERY_ENABLED
+#ifndef LY_LOG_HARDWARE_BATTERY_ENABLED
+#define LY_LOG_HARDWARE_BATTERY_ENABLED 1
+#endif
+
+// <q> LY_LOG_HARDWARE_TIME_ENABLED
+#ifndef LY_LOG_HARDWARE_TIME_ENABLED
+#define LY_LOG_HARDWARE_TIME_ENABLED 1
+#endif
+
+// <q> LY_LOG_FLASH_ENABLED
+#ifndef LY_LOG_FLASH_ENABLED 
+#define LY_LOG_FLASH_ENABLED 1
+#endif
+
+// <q> LY_LOG_D_STORE_ENABLED
+#ifndef LY_LOG_D_STORE_ENABLED 
+#define LY_LOG_D_STORE_ENABLED 1
+#endif
+
+// <q> LY_LOG_D_SYNC_ENABLED
+#ifndef LY_LOG_D_SYNC_ENABLED 
+#define LY_LOG_D_SYNC_ENABLED 1
+#endif
+
+// <q> LY_LOG_SLEEP_RECORD_ENABLED
+#ifndef LY_LOG_SLEEP_RECORD_ENABLED 
+#define LY_LOG_SLEEP_RECORD_ENABLED 1
+#endif
+
+// <q> LY_LOG_WD_ENABLED -- WatchDog
+#ifndef LY_LOG_WD_ENABLED 
+#define LY_LOG_WD_ENABLED 1 
+#endif
+
+// <q> LY_LOG_WDM_ENABLED -- WholeDayMeasure 
+#ifndef LY_LOG_WDM_ENABLED 
+#define LY_LOG_WDM_ENABLED 1
+#endif
+
+// <q> LY_LOG_PN_QUEUE_ENABLED -- Push notification queue
+#ifndef LY_LOG_PN_QUEUE_ENABLED 
+#define LY_LOG_PM_QUEUE_ENABLED 1
+#endif
+
+#endif//LY_LOG_ENABLED
+// </e>
+
+// <<< end of configuration section >>>
+
+#endif

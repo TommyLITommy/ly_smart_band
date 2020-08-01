@@ -1,6 +1,8 @@
 #ifndef __GET_ICON_DATA_FROM_PC_H__
 #define __GET_ICON_DATA_FROM_PC_H__
 
+#include "type.h"
+
 enum
 {
 	GET_ICON_DATA_FROM_PC_THROUGH_UART = 0,

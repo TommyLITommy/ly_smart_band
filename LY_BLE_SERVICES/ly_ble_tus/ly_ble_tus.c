@@ -39,6 +39,8 @@ static void on_connect(ble_tus_t * p_tus, ble_evt_t const * p_ble_evt)
     uint8_t                    cccd_value[2];
     ble_tus_client_context_t * p_client = NULL;
 
+	NRF_LOG_INFO("addr of p_tus:0x%08x", p_tus);
+
     err_code = blcm_link_ctx_get(p_tus->p_link_ctx_storage,
                                  p_ble_evt->evt.gap_evt.conn_handle,
                                  (void *) &p_client);
@@ -286,6 +288,8 @@ uint32_t ble_tus_data_send(ble_tus_t * p_tus,
 
     VERIFY_PARAM_NOT_NULL(p_tus);
 
+	//如果mater端没有使能notification，而slave端强行调用发送函数，会有什么影响？
+
 	#if 0//Temporary comment out this code snippet, pay more attention to the link context!!!
     err_code = blcm_link_ctx_get(p_tus->p_link_ctx_storage, conn_handle, (void *) &p_client);
     VERIFY_SUCCESS(err_code);
@@ -304,6 +308,16 @@ uint32_t ble_tus_data_send(ble_tus_t * p_tus,
     {
         return NRF_ERROR_INVALID_PARAM;
     }
+	#else
+	if(conn_handle == BLE_CONN_HANDLE_INVALID)
+	{
+		return NRF_ERROR_INVALID_STATE;
+	}
+
+	if(*p_length > BLE_TUS_MAX_DATA_LEN)
+	{
+		return NRF_ERROR_INVALID_PARAM;
+	}
 	#endif
 	
     memset(&hvx_params, 0, sizeof(hvx_params));

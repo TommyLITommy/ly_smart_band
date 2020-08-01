@@ -43,7 +43,7 @@ uint32_t smooth(uint32_t resultant_acceleration)
 	
 	for(i = 0; i < SMOOTH_WINDOW_SIZE; i++)
 	{
-		sum += smooth_window_buffer[j];
+		sum += smooth_window_buffer[i];
 		index = (index + 1) & SMOOTH_WINDOW_BUFFER_SIZE_MASK;
 	}
 	
@@ -140,10 +140,13 @@ void acceleration_data_handle_result_get(acceleration_data_handle_result_t *p_re
 
 void acceleration_data_handle_init(uint32_t sample_rate)
 {
+    #if 0
 	acceleration_data_handle_result.total_step 	 = 0;
 	acceleration_data_handle_result.wrist_status = WRIST_STATUS_NONE;
 	acceleration_data_handle_result.sleep_status = SLEEP_STATUS_NONE;
 	
 	smooth_window_buffer_head = 0;
 	smooth_window_buffer_tail = 0;
+    #endif
 }
+

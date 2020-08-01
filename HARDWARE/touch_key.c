@@ -1,8 +1,10 @@
 #include <stdint.h>
 #include "nrf_drv_gpiote.h"
+#include "nrf_gpiote.h"
 #include "nrf_gpio.h"
+#include "nrfx_gpiote.h"
 #include "app_error.h"
-
+#include "FreeRTOS.h"
 #include "task.h"
 #include "boards.h"
 #include "touch_key.h"
@@ -56,7 +58,7 @@ static void touch_key_interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_pol
 static void touch_key_interrupt_init(void)
 {
 	ret_code_t err_code;
-	nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_TOGGLE;
+	nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_TOGGLE(false);
 	
 	if(!nrf_drv_gpiote_is_init())
 	{
@@ -84,3 +86,4 @@ void touch_key_init(void)
 	nrf_gpio_pin_set(TOUCH_KEY_POWER_SUPPLY_PIN_NUMBER);
 	touch_key_interrupt_init();
 }
+

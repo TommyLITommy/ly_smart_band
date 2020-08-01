@@ -3,6 +3,7 @@
 #include "draw_icon.h"
 #include "st7789.h"
 #include "drv_flash.h"
+#include "sys_info.h"
 
 //#define ENABLE_UI_MAIN
 //#define EANBLE_UI_ANALOG_CLOCK
@@ -18,7 +19,7 @@
 //#define ENABLE_UI_TP_MOTOR
 //#define ENABLE_UI_TP_CAR
 //#define ENABLE_UI_TP_SUV
-#define ENABLE_UI_TS_TIRE_BINDING
+//#define ENABLE_UI_TS_TIRE_BINDING
 
 #ifdef ENABLE_UI_MAIN
 extern const unsigned char icon_bluetooth[];//Why does those array have been optimised out?
@@ -105,6 +106,14 @@ extern const unsigned char icon_ts_type_deselect[];
 #define icon_ts_type_deselect   NULL
 #endif
 
+#if 1
+#define icon_tire_select	NULL
+#define icon_tire_deselect 	NULL
+#define icon_back_select	NULL
+#define icon_back_deselect	NULL
+#define icon_ok_select		NULL
+#define icon_ok_deselect	NULL
+#else
 /*tire setting*/
 extern const unsigned char icon_tire_select[];
 extern const unsigned char icon_tire_deselect[];
@@ -112,6 +121,7 @@ extern const unsigned char icon_back_select[];
 extern const unsigned char icon_back_deselect[];
 extern const unsigned char icon_ok_select[];
 extern const unsigned char icon_ok_deselect[];
+#endif
 
 #ifdef ENABLE_UI_TS_TIRE_SELECT_MOTOR
 extern const unsigned char icon_motor_body[];
@@ -131,6 +141,14 @@ extern const unsigned char icon_car_body[];
 #define icon_car_body			NULL
 #endif
 
+#if 1
+#define icon_car_suv_h_tire_blue	NULL
+#define icon_car_suv_h_tire_gray	NULL
+#define icon_car_suv_h_tire_red		NULL
+#define icon_car_suv_v_tire_blue	NULL
+#define icon_car_suv_v_tire_gray	NULL
+#define icon_car_suv_v_tire_red		NULL
+#else
 /*tire color*/
 extern const unsigned char icon_car_suv_h_tire_blue[];
 extern const unsigned char icon_car_suv_h_tire_gray[];
@@ -138,6 +156,7 @@ extern const unsigned char icon_car_suv_h_tire_red[];
 extern const unsigned char icon_car_suv_v_tire_blue[];
 extern const unsigned char icon_car_suv_v_tire_gray[];
 extern const unsigned char icon_car_suv_v_tire_red[];
+#endif
 
 #ifdef ENABLE_UI_TS_TIRE_BINDING
 extern const unsigned char icon_tire_binding_name[];
@@ -358,27 +377,40 @@ void draw_icon(const display_area_t *p_display_area, uint8_t icon_id)
     //DMA???
 
 	//read one line each time!!!
+
+	#if 0
 	uint8_t line_buffer[240 * 2];
 	for(uint16_t i = 0; i < p_display_area->width; i++)
 	{
 		//read one line from flash or pc or mobile phone
-		drv_flash_read(FLASH_FIRST_SECTOR_START_ADDRESS + icon_font_flash_info[icon_id], line_buffer, p_display_area->length);
+		drv_flash_read(FLASH_FIRST_SECTOR_START_ADDRESS + icon_font_flash_info[icon_id].offset, line_buffer, p_display_area->length);
+        #if 0
 		hardware.hal_lcd.lcd_draw_picture(p_display_area->x_start,
 						  p_display_area->y_start + y, 
 						  p_display_area->length, 
-						  p_display_area->width, 
+						  1,//p_display_area->width, 
 						  line_buffer);
+        #endif
 		y++;
 	}
+	#endif
 
-	#if 0
+	#if 1
 	if(icon_array[icon_id] != NULL)
 	{
+		#if 0
 		hardware.hal_lcd.lcd_draw_picture(p_display_area->x_start,
 								  p_display_area->y_start, 
 								  p_display_area->length, 
 								  p_display_area->width, 
 								  icon_array[icon_id]);
+		#else
+		sys_info.hardware.drv_lcd.drv_lcd_draw_picture(p_display_area->x_start,
+								  p_display_area->y_start, 
+								  p_display_area->length, 
+								  p_display_area->width, 
+								  icon_array[icon_id]);
+		#endif
 	}
 	#endif
 };

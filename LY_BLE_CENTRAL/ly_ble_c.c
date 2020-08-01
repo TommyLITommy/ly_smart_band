@@ -12,7 +12,6 @@
 #include "ble_hrs.h"
 #include "ble_dis.h"
 #include "ble_conn_params.h"
-#include "sensorsim.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_soc.h"
 #include "nrf_sdh_ble.h"
@@ -48,8 +47,7 @@ NRF_BLE_SCAN_DEF(m_scan);                                                       
  *  If these are set to empty strings, the UUIDs defined below are used.
  */
 
-static char const m_target_periph_name[] = "nut";
-
+static char const m_target_periph_name[] = "LYSB";
 
 static ble_gap_scan_params_t m_scan_param =                 /**< Scan parameters requested for scanning and connection. */
 {
@@ -76,7 +74,10 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
     {
         case NRF_BLE_SCAN_EVT_FILTER_MATCH:
         {
-        	NRF_LOG_INFO("Find device, do connect");
+        	NRF_LOG_RAW_INFO("Find device, address:");
+			NRF_LOG_RAW_HEXDUMP_INFO(p_adv->peer_addr.addr, 6);
+			NRF_LOG_RAW_INFO(",Rssi:%d,ch_index:%d,", p_adv->rssi, p_adv->ch_index);
+			NRF_LOG_INFO("Connect");
             // Initiate connection.
             err_code = sd_ble_gap_connect(&p_adv->peer_addr,
                                           p_scan_param,
@@ -166,12 +167,27 @@ void scan_stop(void)
  */
 static void tus_c_evt_handler(ble_tus_c_t * p_tus_c, ble_tus_c_evt_t const * p_tus_c_evt)
 {
+	ret_code_t err_code;
+	
 	switch(p_tus_c_evt->evt_type)
 	{
+		case BLE_TUS_C_EVT_DISCOVERY_COMPLETE:
+			err_code = ble_tus_c_handles_assign(p_tus_c, p_tus_c_evt->conn_handle, &p_tus_c_evt->handles);
+            APP_ERROR_CHECK(err_code);
+		
+			err_code = ble_tus_c_tx_notif_enable(p_tus_c);//When multiple devices connect to this device, it will sometine output busy error log!!
+			APP_ERROR_CHECK(err_code);
+			break;
+    	case BLE_TUS_C_EVT_TUS_TX_EVT:
+			NRF_LOG_INFO("Remote conn_handle:%d send data", p_tus_c->conn_handle);
+			//NRF_LOG_HEXDUMP_INFO(p_tus_c_evt->p_data, p_tus_c_evt->data_len);//Tommy Debug? WTF
+			extern void ly_ble_p_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint16_t length);
+			ly_ble_p_protocol_handler(p_tus_c_evt->conn_handle, p_tus_c_evt->p_data, p_tus_c_evt->data_len);
+			break;
 		default:
 			break;
 	}
-    NRF_LOG_INFO("!!!");
+
 }
 
 static void tus_c_init(void)
@@ -308,10 +324,15 @@ static void on_ble_central_evt(ble_evt_t const * p_ble_evt)
     }
 }
 
-
 void ly_ble_c_db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {	
 	ble_tus_c_on_db_disc_evt(&m_tus_c[p_evt->conn_handle], p_evt);
+}
+
+void ly_ble_c_status_print(void)
+{
+	uint32_t central_link_cnt = ble_conn_state_central_conn_count();
+	NRF_LOG_INFO("central_link_cnt:%d", central_link_cnt);
 }
 
 void ly_ble_c_init(ly_ble_c_t *p_ly_ble_c)

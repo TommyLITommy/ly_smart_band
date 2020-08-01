@@ -1,6 +1,8 @@
 #ifndef __ACCELERATION_DATA_HANDLE_H__
 #define __ACCELERATION_DATA_HANDLE_H__
 
+#include "type.h"
+
 typedef enum
 {
 	WAVE_TREND_NONE = 0,
@@ -31,3 +33,4 @@ typedef struct
 }acceleration_data_handle_result_t;
 
 #endif
+

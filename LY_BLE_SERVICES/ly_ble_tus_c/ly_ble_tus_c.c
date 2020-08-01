@@ -49,6 +49,10 @@ void ble_tus_c_on_db_disc_evt(ble_tus_c_t * p_ble_tus_c, ble_db_discovery_evt_t 
             p_ble_tus_c->evt_handler(p_ble_tus_c, &tus_c_evt);
         }
     }
+	else
+	{
+		//Do not found tus service!
+	}
 }
 
 /**@brief     Function for handling Handle Value Notification received from the SoftDevice.
@@ -88,9 +92,13 @@ uint32_t ble_tus_c_init(ble_tus_c_t * p_ble_tus_c, ble_tus_c_init_t * p_ble_tus_
     VERIFY_PARAM_NOT_NULL(p_ble_tus_c);
     VERIFY_PARAM_NOT_NULL(p_ble_tus_c_init);
 
+	NRF_LOG_INFO("01_p_ble_tus_c->uuid_type:%d", p_ble_tus_c->uuid_type);
+
     err_code = sd_ble_uuid_vs_add(&tus_base_uuid, &p_ble_tus_c->uuid_type);
     VERIFY_SUCCESS(err_code);
 
+	NRF_LOG_INFO("02_p_ble_tus_c->uuid_type:%d", p_ble_tus_c->uuid_type);
+	
     uart_uuid.type = p_ble_tus_c->uuid_type;
     uart_uuid.uuid = BLE_UUID_TUS_SERVICE;
 
@@ -167,6 +175,7 @@ static uint32_t cccd_configure(uint16_t conn_handle, uint16_t cccd_handle, bool 
 
 uint32_t ble_tus_c_tx_notif_enable(ble_tus_c_t * p_ble_tus_c)
 {
+	NRF_LOG_INFO("ble_tus_c_tx_notif_enable, conn_handle:%d, tux_tx_cccd_handle:%d", p_ble_tus_c->conn_handle, p_ble_tus_c->handles.tus_tx_cccd_handle);
     VERIFY_PARAM_NOT_NULL(p_ble_tus_c);
 
     if ( (p_ble_tus_c->conn_handle == BLE_CONN_HANDLE_INVALID)

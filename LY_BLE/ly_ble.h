@@ -1,6 +1,7 @@
 #ifndef __LY_BLE_H__
 #define __LY_BLE_H__
 
+#include "ble.h"
 /**@brief   Priority of the application BLE event handler.
  * @note    You shouldn't need to modify this value.
  */

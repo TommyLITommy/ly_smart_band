@@ -1,4 +1,4 @@
-#include "hardware.h"
+#include "sys_info.h"
 #include "draw_chinese.h"
 
 uint8_t chinese_gong_font[2*16] = 
@@ -35,7 +35,7 @@ void draw_chinese(uint16_t left_top_x, uint16_t left_top_y, uint8_t chinese_type
 			{
 				if(temp & 0x01)
 				{
-					hardware.hal_lcd.lcd_draw_pixel(left_top_x + j,  left_top_y + 8 * i + m, color);
+					sys_info.hardware.drv_lcd.drv_lcd_draw_point(left_top_x + j,  left_top_y + 8 * i + m, color);
 				}
                 
                 temp = temp >> 1;

@@ -3,7 +3,6 @@
 #include "heart_rate_data_handle.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
-#include "watch_mode_miscellaneous.h"
 #include "acceleration_data_handle_temp.h"
 
 
@@ -813,7 +812,7 @@ uint8_t GetSignalsState(void)
 *******************************************************/
 uint8_t CalHeartRateValue(uint16_t uAdcData)
 {
-	  // USER_LOG_INFO("CalHeartRateValue.\r\n");
+	  // LY_LOG_INFO("CalHeartRateValue.\r\n");
 	   // NRF_LOG_RAW_INFO("%d\r\n", uAdcData);	
 	    Algo_count++;
 	    whether_saturation_is_saturated(uAdcData);	
