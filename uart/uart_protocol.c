@@ -33,8 +33,10 @@ void uart_protocol_assemble_command_and_send(uint8_t group_id, uint8_t command_i
      buffer[index++] = (uint8_t)((crc16 >> 8) & 0xFF);
 	      
      uint8_t *p_start_addr;
-     NRF_LOG_INFO("Ready allocate %04x space\r\n", index);
-    
+     //NRF_LOG_INFO("Ready allocate %04x space\r\n", index);
+
+	 sys_info.hardware.drv_uart.drv_uart_tx_command_handler(buffer, index);
+	 #if 0
 	 p_start_addr = sys_malloc_apply(index, MEMORY_USAGE_UART_TX, __LINE__);
     
 	 if(p_start_addr != NULL)
@@ -47,6 +49,7 @@ void uart_protocol_assemble_command_and_send(uint8_t group_id, uint8_t command_i
      {
         NRF_LOG_INFO("p_start_addr == NULL\r\n");
      }
+	 #endif
 }
 
 static void uart_protocol_group_id_hardware_handler(uint8_t *p_data, uint16_t length)

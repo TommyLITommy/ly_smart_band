@@ -43,6 +43,8 @@
 BLE_TUS_C_ARRAY_DEF(m_tus_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT);        
 NRF_BLE_SCAN_DEF(m_scan);                                                                        /**< Scanning module instance. */
 
+ly_ble_c_peripheral_info_t ly_ble_c_peripheral_info[NRF_SDH_BLE_CENTRAL_LINK_COUNT];
+
 /**@brief Names that the central application scans for, and that are advertised by the peripherals.
  *  If these are set to empty strings, the UUIDs defined below are used.
  */
@@ -183,6 +185,7 @@ static void tus_c_evt_handler(ble_tus_c_t * p_tus_c, ble_tus_c_evt_t const * p_t
 			//NRF_LOG_HEXDUMP_INFO(p_tus_c_evt->p_data, p_tus_c_evt->data_len);//Tommy Debug? WTF
 			extern void ly_ble_p_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint16_t length);
 			ly_ble_p_protocol_handler(p_tus_c_evt->conn_handle, p_tus_c_evt->p_data, p_tus_c_evt->data_len);
+			//package the data and send to uart
 			break;
 		default:
 			break;

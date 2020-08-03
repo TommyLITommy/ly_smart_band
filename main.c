@@ -37,12 +37,13 @@
 #include "sys_malloc.h"
 #include "sys_queue.h"
 #include "sys_info.h"
+#include <math.h>
 
 #define SYSTEM_TIMER_INTERVAL         				1000  
 #define BATTERY_LEVEL_MEAS_INTERVAL					100
 #define HEART_RATE_MEAS_INTERVAL					100
 #define STEP_COUNT_INTERVAL							100
-#define MEMS_RAW_DATA_MEAS_INTERVAL			        200
+#define MEMS_RAW_DATA_MEAS_INTERVAL			        1000//200
 
 #define OSTIMER_WAIT_FOR_QUEUE              		2                                       /**< Number of ticks to wait for the timer queue to be ready */
 
@@ -144,11 +145,40 @@ static void step_timer_timeout_handler(TimerHandle_t xTimer)
 	system_running_time++;
 }
 
+#if 0
 uint8_t buffer[200] = {0x11, 0x22, 0x33};
+#define SAMPLE_RATE 	30
+#define PI	3.1415926
+uint16_t axis_1_array[SAMPLE_RATE];
+
+void print_sin_wave(void)
+{
+	float y;
+	for(int x = 0; x < SAMPLE_RATE; x++)
+	{
+		y = sin((2 * PI * x) / SAMPLE_RATE);
+		NRF_LOG_INFO("y:%d", y * 1000);
+	}
+}
+#endif
+
 static void mems_raw_data_meas_timeout_handler(TimerHandle_t xTimer)
 {
 	NRF_LOG_INFO("mems measure");
-	ly_ble_p_send_data_to_remote(latest_conn_handle, buffer, sizeof(buffer));
+	//特别注意，在timer超时处理函数里，不应执行耗时的操作
+	//ly_ble_c_protocol_handler(0x11, buffer, sizeof(buffer));
+	#if 0
+	uint8_t buffer[32] = {0};
+	//ly_ble_c_protocol_handler();
+	float y;
+
+	for(int x = 0; x < SAMPLE_RATE; x++)
+	{
+		y = sin((2 * PI * x) / SAMPLE_RATE);
+		NRF_LOG_INFO("y:%d", y * 1000);
+	}
+	//ly_ble_p_send_data_to_remote(latest_conn_handle, buffer, sizeof(buffer));
+	#endif
 }
 
 static void application_timers_start(void)

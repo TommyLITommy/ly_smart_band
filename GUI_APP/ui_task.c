@@ -18,6 +18,7 @@
 #include "ui_task.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
+#include "sys_info.h"
 
 static ui_t ui_new = UI_TS_TIRE_BINDING;
 static ui_t show_ui = UI_TS_TIRE_BINDING;
@@ -118,6 +119,8 @@ void ui_next(void)
 	ui_new = (ui_t)ui_index;
 }
 
+uint8_t buffer[500] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+
 void ui_task(void *param)
 {
 	while(1)
@@ -155,7 +158,12 @@ void ui_task(void *param)
 				break;
 		}
 		#endif
-		vTaskDelay(100);
+		vTaskDelay(1000);
+		//调用ly_ble_c_protocol_handler发送数据到串口，会出现hardfault异常，通过直接调用串口发送函数
+		//测试发现，并不是数据量的问题，要好好分享一下，是什么原因造成的hardfault！！！
+		sys_info.hardware.drv_uart.drv_uart_tx_command_handler(buffer, sizeof(buffer));
+		//extern void ly_ble_c_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint16_t length);
+		//ly_ble_c_protocol_handler(0x11, buffer, sizeof(buffer));
 	}
 }
 

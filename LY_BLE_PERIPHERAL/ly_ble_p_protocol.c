@@ -5,6 +5,10 @@
 #include "crc16.h"
 #include "ly_ble.h"
 #include "ly_ble_p_protocol.h"
+#include "ly_ble_p_protocol_gid_set.h"
+#include "ly_ble_p_protocol_gid_read.h"
+#include "ly_ble_p_protocol_gid_action.h"
+#include "ly_ble_p_protocol_gid_upload.h"
 
 #include "global_config.h"
 
@@ -16,20 +20,22 @@
 #endif
 #include "ly_log.h"
 
+static uint8_t sequence;
+
 static void ly_ble_p_protocol_gid_debug_handler(uint16_t conn_handle, const uint8_t *p_data, uint16_t length)
 {
 	switch(p_data[BLE_PROTOCOL_COMMAND_ID_FIELD_OFFSET])
 	{
-		case GID_DEBUG_CID_SHORT_PRESS:
+		case BLE_PROTOCOL_GID_DEBUG_CID_SHORT_PRESS:
 			NRF_LOG_INFO("short press");
 			break;
-		case GID_DEBUG_CID_LONG_PRESS:
+		case BLE_PROTOCOL_GID_DEBUG_CID_LONG_PRESS:
 			NRF_LOG_INFO("long press");
 			break;
-		case GID_DEBUG_CID_SYSTEM_RESET:
+		case BLE_PROTOCOL_GID_DEBUG_CID_SYSTEM_RESET:
 			NVIC_SystemReset();
 			break;
-		case GID_DEBUG_CID_DATABASE_DISCOVERY:
+		case BLE_PROTOCOL_GID_DEBUG_CID_DATABASE_DISCOVERY:
 			NRF_LOG_INFO("db discovery");
 			ly_ble_db_discovery_start(conn_handle);
 			break;
@@ -63,11 +69,11 @@ static void ly_ble_p_protocol_gid_flash_handler(uint16_t conn_handle, const uint
 	
 	switch(p_data[BLE_PROTOCOL_COMMAND_ID_FIELD_OFFSET])
 	{
-		case GID_FLASH_CID_ERASE:
+		case BLE_PROTOCOL_GID_FLASH_CID_ERASE:
 			{
 				uint8_t sector_count;
 				
-				NRF_LOG_INFO("GID_FLASH_CID_READ");
+				NRF_LOG_INFO("BLE_PROTOCOL_GID_FLASH_CID_READ");
 
 				//if(flash_start_address < 0x200000 || flash_start_address > 0x400000 || ((flash_start_address % FLASH_SECTOR_SIZE) != 0))
 				if((flash_start_address % FLASH_SECTOR_SIZE) != 0)
@@ -98,19 +104,19 @@ static void ly_ble_p_protocol_gid_flash_handler(uint16_t conn_handle, const uint
 				}
 			}
 			break;
-		case GID_FLASH_CID_WRITE:
+		case BLE_PROTOCOL_GID_FLASH_CID_WRITE:
 			{
 				flash_operation_len = uint32_decode(&p_data[BLE_PROTOCOL_PAYLOAD_OFFSET + 1 + 4]);
-				NRF_LOG_INFO("GID_FLASH_CID_WRITE, address:%x,length:%x", flash_start_address, flash_operation_len);
+				NRF_LOG_INFO("BLE_PROTOCOL_GID_FLASH_CID_WRITE, address:%x,length:%x", flash_start_address, flash_operation_len);
 				NRF_LOG_HEXDUMP_INFO(&p_data[BLE_PROTOCOL_PAYLOAD_OFFSET + 5], flash_operation_len);
 				//drv_flash_write(flash_start_address, (uint8_t*)(&p_data[BLE_PROTOCOL_PAYLOAD_OFFSET + 9]), flash_operation_len);
 			}
 			break;
-		case GID_FLASH_CID_READ:
+		case BLE_PROTOCOL_GID_FLASH_CID_READ:
 			{
 				flash_operation_len = uint32_decode(&p_data[BLE_PROTOCOL_PAYLOAD_OFFSET + 5]);
 				//There should pay more attention, If the length to be read is too large, it has to split the data into small pieces!
-				NRF_LOG_INFO("GID_FLASH_CID_READ");
+				NRF_LOG_INFO("BLE_PROTOCOL_GID_FLASH_CID_READ");
 			}
 			break;
 		default:
@@ -150,33 +156,54 @@ void ly_ble_p_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint
 
 	switch(p_data[BLE_PROTOCOL_GROUP_ID_FIELD_OFFSET])
 	{
-		case GROUP_ID_NONE:
+		case BLE_PROTOCOL_GROUP_ID_NONE:
 			break;
-		case GROUP_ID_0x01:
-			//ly_ble_p_protocol_gid_0x01_handler(conn_handle, p_data, length);
+		case BLE_PROTOCOL_GROUP_ID_SET:
+			ly_ble_p_protocol_gid_set_handler(conn_handle, p_data, length);
 			break;
-		case GROUP_ID_0x02:
-			//ly_ble_p_protocol_gid_0x02_handler(conn_handle, p_data, length);
+		case BLE_PROTOCOL_GROUP_ID_READ:
+			ly_ble_p_protocol_gid_read_handler(conn_handle, p_data, length);
 			break;
-		case GROUP_ID_0x03:
-			//ly_ble_p_protocol_gid_0x03_handler(conn_handle, p_data, length);
+		case BLE_PROTOCOL_GROUP_ID_ACTION:
+			ly_ble_p_protocol_gid_action_handler(conn_handle, p_data, length);
 			break;
-		case GROUP_ID_0x04:
-			//ly_ble_p_protocol_gid_0x04_handler(conn_handle, p_data, length);
+		case BLE_PROTOCOL_GROUP_ID_UPLOAD:
+			ly_ble_p_protocol_gid_upload_handler(conn_handle, p_data, length);
 			break;
-		case GROUP_ID_0x05:
-			//ly_ble_p_protocol_gid_0x05_handler(conn_handle, p_data, length);
-			break;
-		case GROUP_ID_DEBUG:
+		case BLE_PROTOCOL_GROUP_ID_DEBUG:
 			ly_ble_p_protocol_gid_debug_handler(conn_handle, p_data, length);
 			break;
-		case GROUP_ID_FLASH:
+		case BLE_PROTOCOL_GROUP_ID_FLASH:
 			ly_ble_p_protocol_gid_flash_handler(conn_handle, p_data, length);
 			break;
 		default:
 			break;
 	}
 	NRF_LOG_INFO("\r\n");
+}
+
+//每一个ble central都有一个control block，记录一些信息，当前正在执行的命令，维护额外的信息
+//为了提高throughput，这里要好好设计数据发送方式
+void ly_ble_p_protocol_assemble_command_and_send(uint16_t conn_handle, uint8_t group_id, uint8_t command_id, const uint8_t *payload, uint16_t payload_length)
+{
+	uint8_t command_buffer[256];
+	uint16_t crc16;
+	uint16_t command_length;
+	uint16_t index = 0;
+
+	command_buffer[index++] = sequence++;
+	command_buffer[index++] = group_id;
+	command_buffer[index++] = command_id;
+	uint16_encode(payload_length, &command_buffer[index]);
+	index += 2;
+	memcpy(&command_buffer[index], payload, payload_length);
+	index += payload_length;
+
+	crc16 = crc16_compute(command_buffer, index, NULL);
+	uint16_encode(crc16, &command_buffer[index]);
+	index += 2;
+
+	//send this command
 }
 
 void ly_ble_p_protocol_init(void)

@@ -4936,6 +4936,26 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol.c</FilePath>
             </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_action.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_action.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_read.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_read.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_set.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_set.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_upload.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_upload.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -10562,6 +10582,26 @@
               <FileName>ly_ble_p_protocol.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_action.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_action.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_read.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_read.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_set.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_set.c</FilePath>
+            </File>
+            <File>
+              <FileName>ly_ble_p_protocol_gid_upload.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\ly_ble_peripheral\ly_ble_p_protocol_gid_upload.c</FilePath>
             </File>
           </Files>
         </Group>

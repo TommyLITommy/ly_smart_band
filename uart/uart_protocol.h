@@ -93,7 +93,6 @@ typedef enum
     GID_BLE_P_CID_DTP_BLE_CENTTRAL_EVENT
 }gid_ble_c_cid_dtp_t;
 
-
 #define WORKING_BUFFER_LENGTH 1024
 
 #define PC_TO_DEVICE_HEADER 0xAA55
@@ -110,6 +109,7 @@ typedef struct
     uart_protocol_assemble_command_and_send_t uart_protocol_assemble_command_and_send;
 }uart_protocol_t;
 
+extern void uart_protocol_assemble_command_and_send(uint8_t group_id, uint8_t command_id, uint8_t *p_payload, uint16_t payload_length);
 extern void uart_protocol_init(uart_protocol_t *p_uart_protocol);
 
 #endif
