@@ -304,7 +304,7 @@ int main(void)
 	#if 1
 	ui_init();
 	//xTaskCreate(start_task, "START_TASK", 300, NULL, 2, &start_task_handle);
-	xTaskCreate(ui_task, "ui_task", 300, NULL, 1, &ui_task_handle);
+	xTaskCreate(ui_task, "ui_task", 300, NULL, 1, &ui_task_handle);//特别要注意这里的堆栈空间大小，在这个task内部，对于局部变量的使用要特别注意，防止堆栈溢出！！
 	#endif
 
 	#if 1

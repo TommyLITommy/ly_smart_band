@@ -14,6 +14,8 @@
 
 static uint8_t sequence;
 
+uint8_t uart_tx_working_buffer[UART_TX_WORKING_BUFFER_LENGTH];
+
 void uart_protocol_assemble_command_and_send(uint8_t group_id, uint8_t command_id, uint8_t *p_payload, uint16_t payload_length)
 {
      uint8_t buffer[WORKING_BUFFER_LENGTH];

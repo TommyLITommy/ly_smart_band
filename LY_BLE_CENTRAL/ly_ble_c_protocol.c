@@ -57,12 +57,12 @@ void ly_ble_c_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint
 	NRF_LOG_INFO("\r\n");
 
 	//conn_handle,mac_address,ble_protocol
-	uint8_t buffer[250];
+	uint8_t buffer[10];
 	uint16_t index = 0;
 	buffer[index++] = BLE_GATTC_EVT_HVX;
 	uint16_encode(conn_handle, &buffer[index]);
 	index += 2;
-	uint8_t mac_address[6] = {0x11,0x22,0x33,0x44,0x55,0x66};
+	uint8_t mac_address[6] = {0xF1,0xF2,0xF3,0xF4,0xF5,0xF6};
 	memcpy(&buffer[index], mac_address, 6);
 	index += 6;
 	memcpy(&buffer[index], p_data, length);
