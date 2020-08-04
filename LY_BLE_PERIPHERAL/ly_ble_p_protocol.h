@@ -1,6 +1,8 @@
 #ifndef __LY_BLE_P_PROTOCOL_H__
 #define __LY_BLE_P_PROTOCOL_H__
 
+#include "type.h"
+
 #define BLE_PROTOCOL_MIN_SIZE						7
 
 #define BLE_PROTOCOL_SEQUENCE_FIELD_OFFSET 			0
@@ -8,6 +10,16 @@
 #define BLE_PROTOCOL_COMMAND_ID_FIELD_OFFSET		2
 #define BLE_PROTOCOL_PAYLOAD_LENGTH_FIELD_OFFSET	3
 #define BLE_PROTOCOL_PAYLOAD_OFFSET					5
+
+typedef struct
+{
+	uint8_t sequence;
+	uint8_t group_id;
+	uint8_t command_id;
+	uint16_t payload_length;
+	uint8_t *pyaload;
+	uint16_t crc16;
+}ly_ble_p_protocol_data_t;
 
 typedef enum
 {

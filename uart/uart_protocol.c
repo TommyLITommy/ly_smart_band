@@ -14,37 +14,36 @@
 
 static uint8_t sequence;
 
-uint8_t uart_tx_working_buffer[UART_TX_WORKING_BUFFER_LENGTH];
+uint8_t uart_protocol_tx_working_buffer[UART_PROTOCOL_TX_WORKING_BUFFER_SIZE];
 
 void uart_protocol_assemble_command_and_send(uint8_t group_id, uint8_t command_id, uint8_t *p_payload, uint16_t payload_length)
 {
-     uint8_t buffer[WORKING_BUFFER_LENGTH];
      uint16_t index = 0;
      uint16_t crc16;
-     buffer[index++] = (uint8_t)((DEVICE_TO_PC_HEADER >> 0) & 0xFF);
-     buffer[index++] = (uint8_t)((DEVICE_TO_PC_HEADER >> 8) & 0xFF);
-     buffer[index++] = sequence++;
-     buffer[index++] = group_id;
-     buffer[index++] = command_id;
-     buffer[index++] = (uint8_t)((payload_length >> 0) & 0xFF);
-     buffer[index++] = (uint8_t)((payload_length >> 8) & 0xFF);
-     memcpy(&buffer[index], p_payload, payload_length);
+     uart_protocol_tx_working_buffer[index++] = (uint8_t)((DEVICE_TO_PC_HEADER >> 0) & 0xFF);
+     uart_protocol_tx_working_buffer[index++] = (uint8_t)((DEVICE_TO_PC_HEADER >> 8) & 0xFF);
+     uart_protocol_tx_working_buffer[index++] = sequence++;
+     uart_protocol_tx_working_buffer[index++] = group_id;
+     uart_protocol_tx_working_buffer[index++] = command_id;
+     uart_protocol_tx_working_buffer[index++] = (uint8_t)((payload_length >> 0) & 0xFF);
+     uart_protocol_tx_working_buffer[index++] = (uint8_t)((payload_length >> 8) & 0xFF);
+     memcpy(&uart_protocol_tx_working_buffer[index], p_payload, payload_length);
      index += payload_length;
-     crc16 = crc16_compute(&buffer[2], index - 2, NULL);
-     buffer[index++] = (uint8_t)((crc16 >> 0) & 0xFF);
-     buffer[index++] = (uint8_t)((crc16 >> 8) & 0xFF);
+     crc16 = crc16_compute(&uart_protocol_tx_working_buffer[2], index - 2, NULL);
+     uart_protocol_tx_working_buffer[index++] = (uint8_t)((crc16 >> 0) & 0xFF);
+     uart_protocol_tx_working_buffer[index++] = (uint8_t)((crc16 >> 8) & 0xFF);
 	      
      uint8_t *p_start_addr;
      //NRF_LOG_INFO("Ready allocate %04x space\r\n", index);
 
-	 sys_info.hardware.drv_uart.drv_uart_tx_command_handler(buffer, index);
+	 sys_info.hardware.drv_uart.drv_uart_tx_command_handler(uart_protocol_tx_working_buffer, index);
 	 #if 0
 	 p_start_addr = sys_malloc_apply(index, MEMORY_USAGE_UART_TX, __LINE__);
     
 	 if(p_start_addr != NULL)
 	 {
         NRF_LOG_INFO("store data into queue\r\n");
-        memcpy(p_start_addr, buffer, index);
+        memcpy(p_start_addr, uart_protocol_tx_working_buffer, index);
 		sys_queue_put(&sys_info.tx_queue, ELEMENT_TYPE_UART, p_start_addr, index);
 	 }
      else

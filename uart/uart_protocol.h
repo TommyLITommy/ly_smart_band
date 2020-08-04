@@ -12,6 +12,17 @@
 #define UART_COMMAND_PAYLOAD_LENGTH_OFFSET   5
 #define UART_COMMAND_PAYLOAD_OFFSET          7
 
+typedef struct
+{
+	uint16_t header;
+	uint8_t sequence;
+	uint8_t group_id;
+	uint8_t command_id;
+	uint16_t payload_length;
+	uint8_t *payload;
+	uint16_t crc16;
+}uart_protocol_data_t;
+
 typedef enum
 {
     GROUP_ID_HARDWARE,//下位机硬件外设控制Group命令
@@ -94,8 +105,8 @@ typedef enum
 }gid_ble_c_cid_dtp_t;
 
 #define WORKING_BUFFER_LENGTH 50//1024
-#define UART_TX_WORKING_BUFFER_LENGTH	1024
-#define UART_RX_WORKING_BUFFER_LENGTH	1024
+#define UART_PROTOCOL_TX_WORKING_BUFFER_SIZE	1024
+#define UART_PROTOCOL_RX_WORKING_BUFFER_SIZE	1024
 
 #define PC_TO_DEVICE_HEADER 0xAA55
 #define DEVICE_TO_PC_HEADER 0x55AA

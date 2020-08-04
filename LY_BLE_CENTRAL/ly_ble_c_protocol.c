@@ -3,6 +3,7 @@
 #include "ble_gattc.h"
 #include "crc16.h"
 #include "uart_protocol.h"
+#include "sys_malloc.h"
 #include "ly_ble_p_protocol.h"
 #include "ly_ble_c_protocol.h"
 
@@ -56,20 +57,24 @@ void ly_ble_c_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint
 	}
 	NRF_LOG_INFO("\r\n");
 
-	//conn_handle,mac_address,ble_protocol
-	uint8_t buffer[10];
+	//relay ble data to pc through uart 
+	uint8_t *p_uart_payload;
 	uint16_t index = 0;
-	buffer[index++] = BLE_GATTC_EVT_HVX;
-	uint16_encode(conn_handle, &buffer[index]);
-	index += 2;
-	uint8_t mac_address[6] = {0xF1,0xF2,0xF3,0xF4,0xF5,0xF6};
-	memcpy(&buffer[index], mac_address, 6);
-	index += 6;
-	memcpy(&buffer[index], p_data, length);
-	index += length;
-	uart_protocol_assemble_command_and_send(GROUP_ID_BLE_C, GID_BLE_P_CID_DTP_BLE_CENTTRAL_EVENT, buffer, index);
+	p_uart_payload = sys_malloc_apply(length + 6, MEMORY_USAGE_UART_TX, __LINE__);//ugly, need modify
+	if(p_uart_payload != NULL)
+	{
+		p_uart_payload[index++] = BLE_GATTC_EVT_HVX;
+		uint16_encode(conn_handle, &p_uart_payload[index]);
+		index += 2;
+		uint8_t mac_address[6] = {0xF1,0xF2,0xF3,0xF4,0xF5,0xF6};
+		memcpy(&p_uart_payload[index], mac_address, 6);
+		index += 6;
+		memcpy(&p_uart_payload[index], p_data, length);
+		index += length;
+		uart_protocol_assemble_command_and_send(GROUP_ID_BLE_C, GID_BLE_P_CID_DTP_BLE_CENTTRAL_EVENT, p_uart_payload, index);
+		sys_malloc_free(p_uart_payload);
+	}
 }
-
 
 void ly_ble_c_protocol_init(void)
 {
