@@ -3,8 +3,10 @@
 #include "nrf_drv_spi.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
-
+#include "global_config.h"
 #include "st7789.h"
+
+#if ENABLE_ST7789_HARDWARE_SPI
 
 #define ST7789_DC_PIN		13
 #define ST7789_RES_PIN		14
@@ -350,3 +352,4 @@ void st7789_init(void)
 	APP_ERROR_CHECK(err_code);
 	command_list();
 }
+#endif

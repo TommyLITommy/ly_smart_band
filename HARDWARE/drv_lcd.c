@@ -4,9 +4,12 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_gpio.h"
+#include "global_config.h"
 #include "sys_info.h"
 #include "lcd_init.h"
 #include "drv_lcd.h"
+
+#if ENABLE_ST7789_GPIO_SIMULATE_SPI
 
 static uint16_t color_array[] =
 {
@@ -171,4 +174,5 @@ void drv_lcd_init(drv_lcd_t *p_drv_lcd)
 	p_drv_lcd->drv_lcd_draw_rectangle 	= drv_lcd_draw_rectangle;
 	p_drv_lcd->drv_lcd_draw_picture 	= drv_lcd_draw_picture;
 }
+#endif
 

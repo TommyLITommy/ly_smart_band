@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -8,8 +8,17 @@
 #include "nrf_delay.h"
 #include "lis3dh_driver.h"
 #include "drv_lis3dh.h"
-#include "ly_log.h"
 #include "calendar.h"
+
+#include "global_config.h"
+#define LY_LOG_MODULE_NAME "DRV_LIS3DH"
+#if	LY_LOG_MODULE_ENABLED(LY_DRV_LIS3DH)
+#define LY_LOG_LEVEL 1
+#else
+#define LY_LOG_LEVEL 0
+#endif
+#include "ly_log.h"
+
 
 #define G_SENSOR_MOSI_PIN_NUMBER  	26
 #define G_SENSOR_CS_PIN_NUMBER	    28
@@ -68,7 +77,6 @@ static uint8_t lis3dh_spi_read(uint8_t address)
 	return data;
 }
 
-
 void lis3dh_handle_fifo_data(void)
 {
 	UTCTimeStruct time;
@@ -76,6 +84,16 @@ void lis3dh_handle_fifo_data(void)
 
 	for(uint8_t index = 0; index < gb_fss; index++)
 	{
+		#ifdef EANBLE_UPLOAD_REAL_TIME_G_SENSOR_RAW_DATA
+		lis3dh_raw_data_buffer[6 * index + 0] = (uint8_t)(lis3dh_axes_raw_data_buffer[index].AXIS_X >> 0);
+		lis3dh_raw_data_buffer[6 * index + 1] = (uint8_t)(lis3dh_axes_raw_data_buffer[index].AXIS_X >> 8);
+		lis3dh_raw_data_buffer[6 * index + 2] = (uint8_t)(lis3dh_axes_raw_data_buffer[index].AXIS_Y >> 0);
+		lis3dh_raw_data_buffer[6 * index + 3] = (uint8_t)(lis3dh_axes_raw_data_buffer[index].AXIS_Y >> 8);
+		lis3dh_raw_data_buffer[6 * index + 4] = (uint8_t)(lis3dh_axes_raw_data_buffer[index].AXIS_Z >> 0);
+		lis3dh_raw_data_buffer[6 * index + 5] = (uint8_t)(lis3dh_axes_raw_data_buffer[index].AXIS_Z >> 8);
+		#endif
+	
+        #if 0
 		//1.feed data to algorithm
 		if(senssun_algorithm_0x01_feed_data(time.hour, time.minute, lis3dh_axes_raw_data_buffer[index].AXIS_X, lis3dh_axes_raw_data_buffer[index].AXIS_Y, lis3dh_axes_raw_data_buffer[index].AXIS_Z, 0) == 1)
 		{
@@ -85,8 +103,10 @@ void lis3dh_handle_fifo_data(void)
 
 			LY_LOG_INFO("wrist_list_count = %d\r\n", wrist_list_count);
 		}
-		//2.send g sensor raw data to collector through ble or uart!!!
+        #endif
 	}
+	//send fifo data to remote or pc
+	//send_lis3dh_raw_data()
 }
 
 void lis3dh_read_fifo_data()
@@ -115,6 +135,28 @@ void lis3dh_read_fifo_data()
 
 	lis3dh_handle_fifo_data();
 }
+
+uint8_t lis3dh_spi_write_data(uint8_t u8Address, uint8_t u8Data)
+{
+	G_SENSOR_SPI_CS_CLR;
+
+	lis3dh_spi_send_byte(u8Address);
+	lis3dh_spi_send_byte(u8Data);
+
+	G_SENSOR_SPI_CS_SET;
+    return 0;
+}
+
+uint8_t lis3dh_spi_read_data(uint8_t u8Address)
+{
+	uint8_t temp;
+	G_SENSOR_SPI_CS_CLR;
+	lis3dh_spi_send_byte(0x80 | u8Address);
+	temp = lis3dh_spi_send_byte(0x00);
+	G_SENSOR_SPI_CS_SET;
+	return temp;
+}
+
 
 void lis3dh_register_check(void)
 {
@@ -154,17 +196,14 @@ static void lis3dh_mode_set(uint8_t mode)
 	switch(mode)
 	{
 		case LIS3DH_OPERATION_MODE_NORMAL:
-				lis3dh_reboot_memory_content();
-				SPI_Mems_Write_Reg(0x20, 0x37);//25HZ, 使能x,y,z轴
-				//SPI_Mems_Write_Reg(0x20, 0x27);//25HZ, 使能x,y,z轴
-				SPI_Mems_Write_Reg(0x23, 0x08);//+-2G,High resolution Enable
-				SPI_Mems_Write_Reg(0x2E, 0x80);//Stream Mode, 
-				SPI_Mems_Write_Reg(0x24, 0x40);//FIFO Enable, 
-	
-				lis3dh_reboot_memory_content();
+			lis3dh_reboot_memory_content();
+			SPI_Mems_Write_Reg(0x20, 0x37);//25HZ, 使能x,y,z轴
+			//SPI_Mems_Write_Reg(0x20, 0x27);//25HZ, 使能x,y,z轴
+			SPI_Mems_Write_Reg(0x23, 0x08);//+-2G,High resolution Enable
+			SPI_Mems_Write_Reg(0x2E, 0x80);//Stream Mode, 
+			SPI_Mems_Write_Reg(0x24, 0x40);//FIFO Enable, 
 
-	/*初始化完后，首先是想办法清空G-Sensor FiFo Buffer里的数据*/
-	prvLis3dhReadFifoData(NULL, 0);//Attention Please
+			lis3dh_reboot_memory_content();
 			break;
     	case LIS3DH_OPERATION_MODE_LOW_POWER:
 			break;
@@ -188,7 +227,6 @@ static void lis3dh_spi_init(void)
 
 void who_am_i_check(void)
 {
-	uint8_t i;
 	uint8_t who_am_i;
 
 	who_am_i = lis3dh_spi_read(LIS3DH_WHO_AM_I);	
@@ -199,7 +237,7 @@ void drv_lis3dh_init(void)
 {
 	lis3dh_spi_init();
 	who_am_i_check();
-
+    lis3dh_mode_set(LIS3DH_OPERATION_MODE_NORMAL);
 	//Start a timer to read g sensor data!!!	
 }
 #endif

@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #include "sdk_config.h"
 #include "drv_si114x.h"
 #include "nrf_delay.h"
@@ -1276,10 +1276,11 @@ void si114x_Int_handle(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 				{
 						Si114x_WriteFifo_Data(uheartData);
 				}
-         
+
+				#if 0
 				//检测并发送未佩戴事件及调整波形参数
 				uWaveState = GetSignalsState();
-			  if(uWaveState ==  NO_WEAR)
+			    if(uWaveState ==  NO_WEAR)
 				{
 					u8GbWrsitIsWearing = false;
 					//watch_evt.watch_evt_id = WATCH_EVT_NO_WEAR;
@@ -1298,6 +1299,7 @@ void si114x_Int_handle(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 						DynamicallyAdjustParmeters(uWaveState);			
 					}					
 				}
+				#endif
 		}
 		
 		return;
@@ -1533,11 +1535,11 @@ uint8_t  Auto_Measurement_Set(Si114x_auto_t autoFlg)
 					Si114x_vLED_Enable();
 					Si114x_AdcPin_HardInt_And_Enable();
 					Si114x_ClrRxFifo();
-					clear_heart_rate_data_handle_para();
+					//clear_heart_rate_data_handle_para();
 
-					extern void Clear_Blood_Pressure(void);
-					//娓呮琛�鍘嬬畻娉曠浉鍏冲彉閲?
-					Clear_Blood_Pressure();
+					//extern void Clear_Blood_Pressure(void);
+					//娓呮琛?鍘嬬畻娉曠浉鍏冲彉閲?
+					//Clear_Blood_Pressure();
 					
 					//重新配置，解决长时间测心率时，算心率不准的问题。
 					uReturnValue = Si114xConfigure(m_si114xTwi_master); 
@@ -1636,11 +1638,11 @@ void Process_Si114x_INT(void)
 			}
 #endif
 			
-	if(CalHeartRateValue(tmpData) || CalBloodpressureValue())
+			//if(CalHeartRateValue(tmpData) || CalBloodpressureValue())
 			{
-				vSetHeartRate(GetHeartRateValue());
-				vWholeDayHeartRateSet(GetHeartRateValue());
-				vSetBloodPressure();
+				//vSetHeartRate(GetHeartRateValue());
+				//vWholeDayHeartRateSet(GetHeartRateValue());
+				//vSetBloodPressure();
 			}
 
 #if   PRINT_RAW_DATA

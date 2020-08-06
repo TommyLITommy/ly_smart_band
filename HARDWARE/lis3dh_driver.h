@@ -1,4 +1,4 @@
-#if 0
+#if 1
 /******************** (C) COPYRIGHT 2012 STMicroelectronics ********************
 * File Name          : lis3dh_driver.h
 * Author             : MSH Application Team

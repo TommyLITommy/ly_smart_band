@@ -1,4 +1,4 @@
-#if 0
+#if 1
 /******************** (C) COPYRIGHT 2012 STMicroelectronics ********************
 * File Name          : LIS3DH_driver.c
 * Author             : MSH Application Team
@@ -37,14 +37,14 @@
 **/
 u8_t SPI_Mems_Read_Reg (u8_t Reg)
 {
-	extern uint8_t u8Lis3dhSpiReadData(uint8_t u8Address);
-	return u8Lis3dhSpiReadData(Reg);
+	extern uint8_t lis3dh_spi_read_data(uint8_t u8Address);
+	return lis3dh_spi_read_data(Reg);
 }
  
 void SPI_Mems_Write_Reg(u8_t WriteAddr, u8_t Data)
 {
-	extern uint8_t u8Lis3dhSpiWriteData(uint8_t u8Address, uint8_t u8Data);
-	u8Lis3dhSpiWriteData(WriteAddr, Data);
+	extern uint8_t lis3dh_spi_write_data(uint8_t u8Address, uint8_t u8Data);
+	lis3dh_spi_write_data(WriteAddr, Data);
 }
 
 /*******************************************************************************

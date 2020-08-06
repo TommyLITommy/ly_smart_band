@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #include "drv_Ads129x.h"
 #include "nrf_drv_spi.h"
 #include "nrf_drv_gpiote.h"
