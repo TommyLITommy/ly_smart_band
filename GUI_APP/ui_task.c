@@ -163,9 +163,9 @@ void ui_task(void *param)
 		//测试发现，并不是数据量的问题，要好好分享一下，是什么原因造成的hardfault！！！
 		//感觉又是堆栈溢出造成的，每个task有自己的堆栈，在函数调用时，会执行入栈操作，如果，子函数中
 		//用到了大量局部变量，这个会影响栈空间！！！！
-		//sys_info.hardware.drv_uart.drv_uart_tx_command_handler(buffer, sizeof(buffer));
-		extern void ly_ble_c_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint16_t length);
-		ly_ble_c_protocol_handler(0x11, buffer, sizeof(buffer));
+		sys_info.hardware.drv_uart.drv_uart_tx_command_handler(buffer, sizeof(buffer));
+		//extern void ly_ble_c_protocol_handler(uint16_t conn_handle, const uint8_t *p_data, uint16_t length);
+		//ly_ble_c_protocol_handler(0x11, buffer, sizeof(buffer));
 	}
 }
 
